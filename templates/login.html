@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Login | PWANIAGRITALKS</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=12">
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='pwaniagritalks-brand-logo.png') }}?v=3">
+</head>
+<body>
+    <header><h1 class="site-logo-heading"><a href="{{ url_for('home') }}" aria-label="PWANIAGRITALKS home"><img class="site-logo" src="{{ url_for('static', filename='pwaniagritalks-brand-logo.jpg') }}?v=3" alt="PWANIAGRITALKS — Growing the Coast Through Agriculture"></a></h1><p>Administrator sign in</p></header>
+    <main>
+        <section>
+            <h2>Admin Login</h2>
+            {% if created %}<p class="form-message" role="status">Your admin account is ready. Sign in below.</p>{% endif %}
+            {% if error %}<p class="form-error" role="alert">{{ error }}</p>{% endif %}
+            <form method="post">
+                <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                <label for="username">Username</label>
+                <input type="text" id="username" name="username" autocomplete="username" required>
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" autocomplete="current-password" required>
+                <button type="submit">Sign in</button>
+            </form>
+            {% if setup_allowed %}<p><a href="{{ url_for('setup') }}">Create the first admin account</a></p>{% endif %}
+            <p><a href="{{ url_for('home') }}">Back to home</a></p>
+        </section>
+    </main>
+    <footer><p>PWANIAGRITALKS | Growing the Coast Through Agriculture</p></footer>
+</body>
+</html>
+

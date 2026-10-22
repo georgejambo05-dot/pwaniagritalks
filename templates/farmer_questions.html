@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ask a Question | PWANIAGRITALKS</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=12">
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='pwaniagritalks-brand-logo.png') }}?v=3">
+</head>
+<body>
+    <header><h1 class="site-logo-heading"><a href="{{ url_for('home') }}" aria-label="PWANIAGRITALKS home"><img class="site-logo" src="{{ url_for('static', filename='pwaniagritalks-brand-logo.jpg') }}?v=3" alt="PWANIAGRITALKS — Growing the Coast Through Agriculture"></a></h1><p>Ask an agricultural question</p></header>
+    <nav><a href="{{ url_for('farmer_portal') }}">My account</a><a href="{{ url_for('home') }}">Home</a></nav>
+    <main>
+        <section>
+            <h2>Hello, {{ farmer['full_name'] }}</h2>
+            <p>Describe your farming question. The site admin will review it.</p>
+            {% if sent %}<p class="form-message" role="status">Your question was sent to the admin.</p>{% endif %}
+            {% if error %}<p class="form-error" role="alert">{{ error }}</p>{% endif %}
+            <form method="post" enctype="multipart/form-data">
+                <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                <label for="question_text">Your question</label>
+                <textarea id="question_text" name="question_text" rows="6" maxlength="2000" required></textarea>
+                <small>Maximum 2,000 characters.</small>
+                <label for="question-photo">Add a photo (optional)</label>
+                <input id="question-photo" name="photo" type="file" accept="image/jpeg,image/png,image/webp">
+                <small>One JPG, PNG, or WEBP photo, up to 5 MB. Only you and the admin can view it.</small>
+                <small>For a helpful picture, use good light, keep it in focus, and show both the whole plant or animal and a close view of the affected area when possible. Do not put yourself at risk to take a photo.</small>
+                <button type="submit">Send Question</button>
+            </form>
+        </section>
+        <section>
+            <h2>My Previous Questions</h2>
+            {% if questions %}
+                <div class="farmer-list">
+                    {% for question in questions %}
+                        <article class="farmer-card">
+                            <p>{{ question['question_text'] }}</p>
+                            {% if question['photo_filename'] %}
+                                <p><img class="question-photo" src="{{ url_for('question_photo', question_id=question['id']) }}" alt="Photo attached to your farming question"></p>
+                            {% endif %}
+                            <p><small>Sent {{ question['created_at'] }} · {{ question['status'] }}</small></p>
+                            {% if question['answer'] %}
+                                <p class="form-message"><strong>Admin reply:</strong> {{ question['answer'] }}</p>
+                                <p><small>Replied {{ question['answered_at'] }}</small></p>
+                            {% endif %}
+                        </article>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p>You have not sent a question yet.</p>
+            {% endif %}
+        </section>
+    </main>
+    <footer><p>PWANIAGRITALKS | Growing the Coast Through Agriculture</p></footer>
+</body>
+</html>
+
+
+
+
+

@@ -1,0 +1,537 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    background-color: #f1f8e9;
+    color: #333333;
+}
+
+header {
+    background-color: #2e7d32;
+    color: white;
+    text-align: center;
+    padding: 30px;
+}
+
+nav {
+    background-color: #1b5e20;
+    padding: 15px;
+    text-align: center;
+}
+
+nav a {
+    color: white;
+    text-decoration: none;
+    margin: 15px;
+    font-weight: bold;
+}
+
+main {
+    max-width: 900px;
+    margin: 25px auto;
+    padding: 20px;
+}
+
+section {
+    background-color: white;
+    margin-bottom: 20px;
+    padding: 20px;
+    border-radius: 8px;
+}
+
+h2 {
+    color: #2e7d32;
+}
+
+form {
+    max-width: 500px;
+}
+
+label {
+    display: block;
+    margin-top: 14px;
+    font-weight: bold;
+}
+
+input, select {
+    box-sizing: border-box;
+    width: 100%;
+    padding: 10px;
+    margin-top: 6px;
+    border: 1px solid #9e9e9e;
+    border-radius: 4px;
+    font-size: 1rem;
+}
+
+button, .button-link {
+    display: inline-block;
+    margin-top: 18px;
+    padding: 11px 18px;
+    border: 0;
+    border-radius: 4px;
+    background-color: #2e7d32;
+    color: white;
+    font-size: 1rem;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.form-message {
+    padding: 12px;
+    background-color: #e8f5e9;
+    border-left: 4px solid #2e7d32;
+}
+
+.form-error {
+    padding: 12px;
+    background-color: #ffebee;
+    color: #b71c1c;
+}
+
+.farmer-list {
+    display: grid;
+    gap: 12px;
+}
+
+.farmer-card {
+    padding: 14px;
+    border-left: 4px solid #2e7d32;
+    background-color: #f8fbf5;
+}
+
+.farmer-card h3 {
+    margin-top: 0;
+    color: #1b5e20;
+}
+
+.farmer-card p {
+    margin-bottom: 0;
+}
+
+.delete-form {
+    display: inline-block;
+    margin-left: 8px;
+}
+
+.delete-button {
+    background-color: #b71c1c;
+}
+
+.summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    gap: 10px;
+    margin: 20px 0;
+}
+
+.summary-card {
+    padding: 14px;
+    border-radius: 6px;
+    background-color: #e8f5e9;
+    text-align: center;
+}
+
+.summary-card h3 {
+    margin: 0;
+    color: #1b5e20;
+    font-size: 1.7rem;
+}
+
+.summary-card p {
+    margin: 6px 0 0;
+}
+
+.search-form {
+    margin: 22px 0;
+}
+
+.clear-search {
+    display: inline-block;
+    margin-left: 10px;
+    color: #1b5e20;
+}
+
+footer {
+    background-color: #1b5e20;
+    color: white;
+    text-align: center;
+    padding: 15px;
+}
+
+form, .logout-form {
+    max-width: 500px;
+}
+
+.logout-form {
+    display: inline-block;
+    margin: 0 0 0 12px;
+}
+
+textarea {
+    box-sizing: border-box;
+    width: 100%;
+    padding: 10px;
+    margin-top: 6px;
+    border: 1px solid #9e9e9e;
+    border-radius: 4px;
+    font: inherit;
+    resize: vertical;
+}
+
+/* Breed photos used in the animal guides */
+.breed-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+}
+
+.breed-card {
+    padding: 14px;
+    border: 1px solid #d7e5d1;
+    border-radius: 8px;
+    background: #fbfdf9;
+}
+
+.breed-card h3 {
+    margin-top: 0;
+    color: #1b5e20;
+}
+
+.breed-card figure {
+    margin: 0;
+}
+
+.breed-card img {
+    display: block;
+    width: 100%;
+    height: 190px;
+    object-fit: cover;
+    border-radius: 6px;
+    background: #e8f5e9;
+}
+
+.breed-card figcaption {
+    margin-top: 6px;
+    font-size: 0.8rem;
+    line-height: 1.4;
+}
+
+.breed-note {
+    min-height: 130px;
+    display: flex;
+    align-items: center;
+    padding: 16px;
+    border-radius: 6px;
+    background: #e8f5e9;
+    line-height: 1.5;
+}
+
+/* County selector shared by the animal guides */
+.county-picker {
+    border-left: 5px solid #2e7d32;
+    background: #f1f8ef;
+}
+
+.county-picker label {
+    display: block;
+    margin: 10px 0 6px;
+    font-weight: 600;
+}
+
+.county-picker select {
+    max-width: 100%;
+    padding: 10px;
+    border: 1px solid #789b72;
+    border-radius: 5px;
+    font: inherit;
+    background: white;
+}
+
+.county-picker p {
+    line-height: 1.5;
+}
+
+@media print {
+    body.guide-page {
+        color: #111;
+        background: #fff;
+        font-size: 10pt;
+    }
+
+    body.guide-page header {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 16px;
+        background: #fff;
+        color: #111;
+        padding: 0 0 8px;
+        border-bottom: 1px solid #bbb;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    body.guide-page header .site-logo-heading {
+        margin: 0;
+    }
+
+    body.guide-page header .site-logo {
+        display: block !important;
+        visibility: visible !important;
+        width: 88px;
+        max-width: 88px;
+        height: auto;
+        border-radius: 0;
+        object-fit: contain;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    body.guide-page header p {
+        margin: 0;
+    }
+
+    body.guide-page nav,
+    body.guide-page footer,
+    body.guide-page .print-guide-control,
+    body.guide-page button,
+    body.guide-page input,
+    body.guide-page select,
+    body.guide-page textarea {
+        display: none !important;
+    }
+
+    body.guide-page main {
+        width: 100%;
+        max-width: none;
+        margin: 0;
+        padding: 0;
+    }
+
+    body.guide-page section,
+    body.guide-page .farmer-card,
+    body.guide-page .breed-card {
+        break-inside: avoid;
+        box-shadow: none;
+        border-radius: 0;
+    }
+
+    body.guide-page a {
+        color: #111;
+        text-decoration: none;
+    }
+
+    body.guide-page .maize-task {
+        appearance: auto;
+        print-color-adjust: exact;
+    }
+}
+
+.question-photo {
+    display: block;
+    max-width: min(100%, 560px);
+    max-height: 420px;
+    border-radius: 8px;
+    object-fit: contain;
+}
+
+.founder-profile {
+    display: grid;
+    grid-template-columns: minmax(150px, 220px) 1fr;
+    align-items: center;
+    gap: 22px;
+}
+
+.founder-profile img {
+    display: block;
+    width: 100%;
+    height: 220px;
+    border-radius: 8px;
+    object-fit: cover;
+    object-position: center 5%;
+}
+
+.founder-profile h3 {
+    color: #1b5e20;
+    margin-top: 0;
+}
+
+@media (max-width: 560px) {
+    .founder-profile {
+        grid-template-columns: 1fr;
+    }
+
+    .founder-profile img {
+        max-width: 240px;
+    }
+}
+
+
+/* PWANIAGRITALKS brand logo */
+.site-logo-heading {
+    margin: 0 auto 8px;
+    line-height: 1;
+}
+
+.site-logo-heading a {
+    display: inline-block;
+    max-width: 100%;
+}
+
+.site-logo {
+    display: block;
+    width: min(100%, 150px);
+    height: auto;
+    margin: 0 auto;
+    border-radius: 50%;
+}
+/* Keep navigation labels such as Farmer Login on one line. */
+nav a {
+    white-space: nowrap;
+}
+
+/* Separate farmer and founder links from the main homepage navigation. */
+.home-nav {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 12px;
+}
+
+.home-nav-primary,
+.home-nav-secondary {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px 28px;
+}
+
+.home-nav a {
+    margin: 0;
+}
+
+.home-nav-secondary {
+    border-top: 1px solid rgba(255, 255, 255, 0.35);
+    padding-top: 10px;
+    font-size: 0.95rem;
+}
+/* Mobile-friendly layout adjustments */
+body {
+    line-height: 1.5;
+}
+
+img {
+    max-width: 100%;
+}
+
+@media (max-width: 600px) {
+    header {
+        padding: 18px 12px;
+    }
+
+    main {
+        margin: 14px auto;
+        padding: 14px;
+    }
+
+    section {
+        padding: 16px;
+        margin-bottom: 14px;
+    }
+
+    main h2 {
+        font-size: clamp(1.3rem, 5vw, 1.7rem);
+    }
+
+    nav:not(.home-nav) {
+        padding: 10px 8px;
+    }
+
+    nav:not(.home-nav) a {
+        display: inline-block;
+        margin: 6px 8px;
+        padding: 4px 0;
+    }
+
+    .home-nav {
+        gap: 8px;
+        padding: 12px 8px;
+    }
+
+    .home-nav-primary,
+    .home-nav-secondary {
+        max-width: 100%;
+        gap: 8px 16px;
+    }
+
+    .home-nav a {
+        padding: 6px 0;
+    }
+
+    input,
+    select,
+    textarea {
+        min-height: 44px;
+        max-width: 100%;
+        font-size: 16px;
+    }
+
+    button,
+    .button-link {
+        min-height: 44px;
+        max-width: 100%;
+        padding: 12px 16px;
+    }
+
+    .summary-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .breed-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .delete-form {
+        display: block;
+        margin: 8px 0 0;
+    }
+
+    .logout-form {
+        margin: 8px 0 0;
+    }
+
+    .clear-search {
+        margin: 10px 0 0;
+    }
+}
+/* Searchable farming guide cards */
+.guide-search {
+    max-width: 480px;
+    margin: 18px 0;
+}
+
+.guide-search label {
+    margin-top: 0;
+}
+
+.guide-search-status {
+    margin: 8px 0 0;
+    color: #4b604c;
+}
+
+.farmer-card[hidden] {
+    display: none !important;
+}
+.local-advice-note {
+    padding: 12px;
+    border-left: 4px solid #2e7d32;
+    border-radius: 4px;
+    background: #f1f8e9;
+    line-height: 1.5;
+}
+@media (max-width: 600px) {
+    .site-logo {
+        width: min(100%, 120px);
+    }
+}

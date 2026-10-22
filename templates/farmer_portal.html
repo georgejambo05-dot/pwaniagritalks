@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Farmer Account | PWANIAGRITALKS</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=12">
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='pwaniagritalks-brand-logo.png') }}?v=3">
+</head>
+<body>
+    <header><h1 class="site-logo-heading"><a href="{{ url_for('home') }}" aria-label="PWANIAGRITALKS home"><img class="site-logo" src="{{ url_for('static', filename='pwaniagritalks-brand-logo.jpg') }}?v=3" alt="PWANIAGRITALKS — Growing the Coast Through Agriculture"></a></h1><p>My farmer account</p></header>
+    <nav>
+        <a href="{{ url_for('home') }}">Home</a>
+        <form class="logout-form" method="post" action="{{ url_for('farmer_logout') }}">
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+            <button type="submit">Sign out</button>
+        </form>
+    </nav>
+    <main>
+        <section>
+            <h2>Welcome, {{ farmer['full_name'] }}</h2>
+            {% if request.args.get('changed') == 'yes' %}<p class="form-message" role="status">Your password has been changed.</p>{% endif %}
+            {% if request.args.get('updated') == 'yes' %}
+                <p class="form-message" role="status">Your profile has been updated.</p>
+            {% endif %}
+            <p>Here are the details saved in your farmer account.</p>
+            <p><strong>Phone:</strong> {{ farmer['phone'] }}</p>
+            <p><strong>Location:</strong> {{ farmer['location'] }}</p>
+            <p><strong>Farming type:</strong> {{ farmer['farming_type']|replace('_', ' ')|title }}</p>
+            <a class="button-link" href="{{ url_for('edit_own_profile') }}">Update my details</a>
+            <a class="button-link" href="{{ url_for('farmer_change_password') }}">Change password</a>
+            <a class="button-link" href="{{ url_for('farmer_questions') }}">Ask a question</a>
+        </section>
+    </main>
+    <footer><p>PWANIAGRITALKS | Growing the Coast Through Agriculture</p></footer>
+</body>
+</html>
+
+
+

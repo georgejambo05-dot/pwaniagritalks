@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Update My Details | PWANIAGRITALKS</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=12">
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='pwaniagritalks-brand-logo.png') }}?v=3">
+</head>
+<body>
+    <header><h1 class="site-logo-heading"><a href="{{ url_for('home') }}" aria-label="PWANIAGRITALKS home"><img class="site-logo" src="{{ url_for('static', filename='pwaniagritalks-brand-logo.jpg') }}?v=3" alt="PWANIAGRITALKS — Growing the Coast Through Agriculture"></a></h1><p>Update your farmer profile</p></header>
+    <nav><a href="{{ url_for('farmer_portal') }}">Back to my account</a></nav>
+    <main>
+        <section>
+            <h2>Update My Details</h2>
+            <p>You can update your phone number, location, and farming type.</p>
+            {% if error %}<p class="form-error" role="alert">{{ error }}</p>{% endif %}
+            <form method="post">
+                <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                <label for="phone">Phone number</label>
+                <input type="tel" id="phone" name="phone" value="{{ farmer['phone'] }}" minlength="7" maxlength="20" pattern="[0-9+() -]{7,20}" title="Use 7 to 20 digits, spaces, plus signs, or parentheses" required>
+                <label for="location">County or location</label>
+                <input type="text" id="location" name="location" value="{{ farmer['location'] }}" required>
+                <label for="farming_type">What do you farm?</label>
+                <select id="farming_type" name="farming_type" required>
+                    <option value="crops" {% if farmer['farming_type'] == 'crops' %}selected{% endif %}>Crops</option>
+                    <option value="livestock" {% if farmer['farming_type'] == 'livestock' %}selected{% endif %}>Livestock</option>
+                    <option value="mixed" {% if farmer['farming_type'] == 'mixed' %}selected{% endif %}>Both crops and livestock</option>
+                    <option value="other" {% if farmer['farming_type'] == 'other' %}selected{% endif %}>Other</option>
+                </select>
+                <button type="submit">Save Changes</button>
+            </form>
+        </section>
+    </main>
+    <footer><p>PWANIAGRITALKS | Growing the Coast Through Agriculture</p></footer>
+</body>
+</html>
+

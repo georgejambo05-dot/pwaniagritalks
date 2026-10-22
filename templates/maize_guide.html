@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Coastal Maize Guide | PWANIAGRITALKS</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=12">
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='pwaniagritalks-brand-logo.png') }}?v=3">
+</head>
+<body class="guide-page maize-guide-page">
+    <header>
+        <h1 class="site-logo-heading"><a href="{{ url_for('home') }}" aria-label="PWANIAGRITALKS home"><img class="site-logo" src="{{ url_for('static', filename='pwaniagritalks-brand-logo.jpg') }}?v=3" alt="PWANIAGRITALKS — Growing the Coast Through Agriculture"></a></h1>
+        <p>A practical maize guide for Coastal Kenya</p>
+    </header>
+    <nav><a href="{{ url_for('home') }}">← Back to Home</a><a href="{{ url_for('farmer_login') }}">Farmer login</a></nav>
+    <p class="print-guide-control"><button type="button" class="guide-print-button">Print or save as PDF</button></p>
+    <main>
+        <section>
+            <h2>Start with your county and growing area</h2>
+            <p>Choose a county below to see maize varieties listed by KALRO for similar growing zones. These are recommendations to ask about, not a guarantee that a seed shop has them in stock. Conditions can differ within one county, so confirm the variety with your local agricultural extension officer.</p>
+            <p><strong>Coastal lowlands:</strong> KALRO lists PH4 and PH1 for hot, humid lowland zones. Taita Taveta has both lowland and higher, wetter areas, so its variety choice needs extra care.</p>
+        </section>
+
+        <section>
+            <h2>County variety suggestions</h2>
+            <details class="farmer-card">
+                <summary><strong>Mombasa</strong></summary>
+                <p>For hot, humid lowland conditions, ask a certified seed seller or extension officer about PH4 or PH1. Confirm that the variety suits your exact farm conditions.</p>
+            </details>
+            <details class="farmer-card">
+                <summary><strong>Kwale</strong></summary>
+                <p>For coastal lowland conditions, ask about PH4 or PH1. Kwale has different local conditions, so confirm the recommendation for your area with an extension officer.</p>
+            </details>
+            <details class="farmer-card">
+                <summary><strong>Kilifi</strong></summary>
+                <p>For coastal lowland conditions, ask about PH4 or PH1. Check with an extension officer for advice that fits your location and expected rainfall.</p>
+            </details>
+            <details class="farmer-card">
+                <summary><strong>Tana River</strong></summary>
+                <p>For hot, lowland conditions, ask about PH4 or PH1. Rainfall can vary, so choose a variety and planting time with local extension advice.</p>
+            </details>
+            <details class="farmer-card">
+                <summary><strong>Lamu</strong></summary>
+                <p>For coastal lowland conditions, ask about PH4 or PH1. Confirm suitability for your farm with a local extension officer before buying seed.</p>
+            </details>
+            <details class="farmer-card">
+                <summary><strong>Taita Taveta</strong></summary>
+                <p>This county includes different growing zones. For hot, lower areas, ask about PH4 or PH1. For higher, wetter areas, KALRO lists H632, WE1101, and H622 for highland conditions. Ask your extension officer which zone matches your farm before choosing.</p>
+            </details>
+            <p><small>Varieties are grouped by KALRO growing-zone guidance, not by a guarantee that one variety is best throughout an entire county.</small></p>
+        </section>
+
+        <section>
+            <h2>When to plant</h2>
+            <ol>
+                <li>Prepare the field before the expected rainy season.</li>
+                <li>Plant within the first two weeks after effective rains begin, once the soil has enough moisture. Do not rely on a fixed calendar date; rainfall can vary by place and season.</li>
+                <li>Ask your local agricultural extension officer about the current forecast and planting window for your area.</li>
+            </ol>
+        </section>
+
+        <section id="maize-stage-calendar">
+            <h2>Maize tasks by crop stage</h2>
+            <p>Use the plant's growth stage as your guide rather than counting from one fixed calendar date. Rain and growth can vary by farm.</p>
+            <ol>
+                <li><strong>Before planting:</strong> check the expected rains, prepare the field, and confirm the right variety for your growing zone.</li>
+                <li><strong>From emergence onward:</strong> inspect the crop at least weekly for pests, fresh damage, and weeds.</li>
+                <li><strong>At least three weeks after emergence:</strong> do the first hand weeding.</li>
+                <li><strong>When the maize is knee-high:</strong> do the second hand weeding and ask an extension officer about any crop concerns.</li>
+            </ol>
+            <p><small>The Ministry of Agriculture extension manual emphasizes weed control during the first four to six weeks after emergence. Follow local extension advice if your farm conditions differ.</small></p>
+        </section>
+        <section>
+            <h2>Prepare the land</h2>
+            <ul>
+                <li>Clear unwanted weeds early and prepare a loose seedbed so the young maize can emerge.</li>
+                <li>Keep crop residue as mulch where suitable to help protect soil moisture, especially in dry areas.</li>
+                <li>Avoid waterlogged areas and steep slopes where soil can wash away. Ask for local advice if your soil is very sandy or shallow.</li>
+                <li>For dry or sandy coastal soils, KALRO gives a planting depth range of 5–10 cm depending on soil moisture. Ask an extension officer to help choose the right depth for your field.</li>
+            </ul>
+        </section>
+
+        <section>
+            <h2>Planting and spacing</h2>
+            <p>KALRO lists 90 cm between rows and 30 cm between planting stations for maize grown alone in dryland and coastal areas. Soil and rainfall conditions can affect the right practice, so confirm locally. Follow the seed packet and extension advice for the number of seeds per station.</p>
+        </section>
+
+        <section>
+            <h2>Weed early</h2>
+            <ul>
+                <li>Keep the field as weed-free as possible during the first 4–6 weeks after maize emerges. Weeds compete with maize for water, light, and nutrients.</li>
+                <li>KALRO recommends hand weeding at about three weeks after emergence, followed by another weeding when the maize is around knee-high.</li>
+                <li>Remove Striga (witchweed) before it produces seed. Ask an extension officer before using any herbicide, and always follow its label.</li>
+            </ul>
+        </section>
+
+        <section id="maize-pest-scouting">
+            <h2>Check your maize for pests</h2>
+            <ul>
+                <li>Walk through the crop at least once a week and look for fresh leaf damage, egg masses, or caterpillars.</li>
+                <li>If you see possible fall armyworm, ask an agricultural extension officer to help confirm what it is and advise on suitable local action.</li>
+                <li>A pheromone trap catching male moths is an early warning to inspect the crop; it is not by itself a reason to spray.</li>
+                <li>Before using any pesticide, get local professional advice and follow the product label exactly. Keep children and animals away as the label directs.</li>
+            </ul>
+        </section>
+        <section id="maize-checklist">
+            <h2>Maize season checklist</h2>
+            <p>Tick each step as you complete it. Your ticks stay only on this page and reset when you reload it.</p>
+            <ul class="maize-checklist">
+                <li><label><input type="checkbox" class="maize-task"> Ask an extension officer which growing zone and variety fit my farm.</label></li>
+                <li><label><input type="checkbox" class="maize-task"> Check the rains and prepare the land before planting.</label></li>
+                <li><label><input type="checkbox" class="maize-task"> Buy certified seed from a licensed seller.</label></li>
+                <li><label><input type="checkbox" class="maize-task"> Plant after effective rains begin and follow the seed packet.</label></li>
+                <li><label><input type="checkbox" class="maize-task"> Check the crop regularly and weed early.</label></li>
+            </ul>
+            <p id="maize-checklist-progress" aria-live="polite">0 of 5 steps complete.</p>
+        </section>
+        <section id="maize-budget">
+            <h2>Estimate your maize budget</h2>
+            <p>Enter your own local prices. The estimate covers only the costs you list; this tool does not save the numbers you enter.</p>
+            <form id="maize-budget-form">
+                <label for="maize-area">Farm area (acres)</label>
+                <input id="maize-area" name="area" type="number" min="0.01" step="0.01" required>
+
+                <label for="maize-seed-cost">Seed cost per acre (KSh)</label>
+                <input id="maize-seed-cost" name="seed_cost" type="number" min="0" step="0.01" value="0" required>
+
+                <label for="maize-fertilizer-cost">Fertilizer cost per acre (KSh)</label>
+                <input id="maize-fertilizer-cost" name="fertilizer_cost" type="number" min="0" step="0.01" value="0" required>
+
+                <label for="maize-prep-cost">Land preparation and labour per acre (KSh)</label>
+                <input id="maize-prep-cost" name="prep_cost" type="number" min="0" step="0.01" value="0" required>
+
+                <label for="maize-other-cost">Other costs for the whole farm (KSh)</label>
+                <input id="maize-other-cost" name="other_cost" type="number" min="0" step="0.01" value="0" required>
+
+                <p><strong>Optional harvest estimate</strong> (use both fields or leave both blank)</p>
+                <label for="maize-yield">Expected 90 kg bags per acre</label>
+                <input id="maize-yield" name="yield_per_acre" type="number" min="0" step="0.1">
+
+                <label for="maize-sale-price">Expected selling price per 90 kg bag (KSh)</label>
+                <input id="maize-sale-price" name="sale_price" type="number" min="0" step="0.01">
+
+                <button type="submit">Calculate estimate</button>
+            </form>
+            <div id="maize-budget-result" aria-live="polite"></div>
+        </section>
+        <section>
+            <h2>Check seed availability safely</h2>
+            <p>This guide does not have live shop stock information. Before travelling, call a licensed seed seller and ask whether certified PH4, PH1, or the variety recommended for your growing zone is available. Check the sealed packet, certification label, and expiry or packing details before buying.</p>
+            <p><a class="button-link" href="https://www.kephis.go.ke/seed-certification-services" target="_blank" rel="noopener noreferrer">KEPHIS seed certification information</a></p>
+        </section>
+
+        <section id="maize-harvest-storage">
+            <h2>Harvest and store maize safely</h2>
+            <ul>
+                <li>For dry grain, look for maturity signs such as dry leaves, brown stalks, drooping cobs, and hard kernels. Harvesting time can vary with variety and weather.</li>
+                <li>Dry cobs on a clean mat or tarpaulin, not directly on soil. Protect them from rain and night dew, then dry the shelled grain thoroughly before storage.</li>
+                <li>Keep dry grain in a clean, dry store, raised off the ground. Clean storage containers and keep new maize separate from old grain.</li>
+                <li>Inspect stored maize regularly for insects, dampness, or mould. Do not eat visibly mouldy grain; seek local extension or food-safety advice.</li>
+            </ul>
+            <p><small>KALRO advises drying maize to below 13% moisture to limit mould risk. If you cannot measure grain moisture, ask an extension officer or grain buyer about safe drying and storage.</small></p>
+        </section>
+        <section>
+            <h2>Sources and Local Advice</h2><p class="local-advice-note">Coastal conditions vary between farms and counties. Ask your county agriculture or livestock extension officer whether this guidance suits your farm. Confirm current supplier availability and prices before buying; this website does not show live stock or price information.</p><ul>
+                <li><a href="https://www.kalro.org/maize/maize-agronomy/" target="_blank" rel="noopener noreferrer">KALRO: Maize agronomy and variety selection</a></li>
+                <li><a href="https://www.kalro.org/maize/maize-post-harvest/" target="_blank" rel="noopener noreferrer">KALRO: Maize harvest and post-harvest handling</a></li>
+                <li><a href="https://www.kalro.org/maize/maize-storage/" target="_blank" rel="noopener noreferrer">KALRO: Maize storage</a></li>                <li><a href="https://www.kalro.org/maize/maize-land-preparation/" target="_blank" rel="noopener noreferrer">KALRO: Land preparation, planting, spacing, and weeding</a></li>
+                <li><a href="https://statistics.kilimo.go.ke/files/bookpage/KENYA_Maize-Extension-Manual.pdf" target="_blank" rel="noopener noreferrer">Ministry of Agriculture: Kenya Maize Extension Manual (pest scouting)</a></li>
+                <li><a href="https://www.fao.org/transboundary-plant-pests-diseases/news/detail/fao-and-kenyan-farmers-deploy-natural-allies-against-fall-armyworm-through-fao-china-south-south-cooperation-project/en" target="_blank" rel="noopener noreferrer">FAO: Fall armyworm monitoring and scouting in Kenya</a></li>                <li><a href="https://www.kephis.go.ke/seed-certification-services" target="_blank" rel="noopener noreferrer">KEPHIS: Seed certification services</a></li>
+            </ul>
+        </section>
+    </main>
+    <footer><p>PWANIAGRITALKS | Growing the Coast Through Agriculture</p></footer>
+    <script src="{{ url_for('static', filename='maize-calculator.js') }}"></script>
+<script src="{{ url_for('static', filename='guide-print.js') }}?v=1" defer></script>
+</body>
+</html>
+
+
+
+
+
+
+

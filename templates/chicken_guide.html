@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Poultry Farming Guide | PWANIAGRITALKS</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=12">
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='pwaniagritalks-brand-logo.png') }}?v=3">
+</head>
+<body class="guide-page" data-guide="chicken">
+<header><h1 class="site-logo-heading"><a href="{{ url_for('home') }}" aria-label="PWANIAGRITALKS home"><img class="site-logo" src="{{ url_for('static', filename='pwaniagritalks-brand-logo.jpg') }}?v=3" alt="PWANIAGRITALKS — Growing the Coast Through Agriculture"></a></h1><p>A practical poultry guide for Coastal Kenya, with a focus on chickens</p></header>
+<nav><a href="{{ url_for('home') }}#guides">All farming guides</a><a href="{{ url_for('home') }}">← Back to Home</a></nav>
+<p class="print-guide-control"><button type="button" class="guide-print-button">Print or save as PDF</button></p>
+<main>
+<section class="county-picker" aria-labelledby="county-heading">
+<h2 id="county-heading">Check guidance for your county</h2>
+<label for="county-select">Choose your coastal county:</label>
+<select id="county-select" name="county">
+<option value="">Choose a county</option>
+<option value="mombasa">Mombasa</option><option value="kwale">Kwale</option><option value="kilifi">Kilifi</option>
+<option value="tana-river">Tana River</option><option value="lamu">Lamu</option><option value="taita-taveta">Taita Taveta</option>
+</select>
+<p id="county-advice" role="status" aria-live="polite">Choose a county to see what the sources document. This is not a live list of chicks for sale.</p>
+</section>
+<section>
+<h2>Improved and commercial poultry types</h2>
+<p>The Kenya Livestock Breeds Catalogue lists Kuroiler, Rainbow Rooster, Sasso, and Kenbro among improved chicken types distributed in Kenya, including the Coastal region. Commercial hatcheries also sell broiler chicks for meat and layer chicks for eggs. These names describe different strains and production goals; a bird’s exact performance depends on its source, feed, housing, and care.</p>
+<p>Pictures below are examples of each type. Always confirm the strain and source with the hatchery before ordering.</p>
+<div class="breed-grid">
+<article class="breed-card"><h3>Broiler chickens</h3><figure><img src="https://www.deheus.co.ke/siteassets/animals/poultry/de-heus-animal-nutrition_animals_poultry_broilers-kopie.jpg?focalpoint=2675530956848030019&height=800&mode=crop&width=1600" alt="White commercial broiler chickens in a poultry house"><figcaption>Example broiler flock. Photo: <a href="https://www.deheus.co.ke/animal-nutrition/poultry/broilers" target="_blank" rel="noopener noreferrer">De Heus Kenya</a>.</figcaption></figure><p>Meat-focused birds. They need close attention to clean water, ventilation, feed, and temperature, especially when young.</p></article>
+<article class="breed-card"><h3>Commercial layers</h3><figure><img src="https://2.bp.blogspot.com/-3aNO1PWnLqs/XIazy-Jl5XI/AAAAAAAACTQ/gW_1Ftv6KcgvXFsi1863SLtxuY6tCfOewCLcBGAs/s640/LOHMANN%2BWHITE.png" alt="White commercial laying hen"><figcaption>Example white layer hen. See <a href="https://www.kenchic.com/layers/" target="_blank" rel="noopener noreferrer">Kenchic layer information</a>.</figcaption></figure><p>Egg-focused birds. Ask the hatchery for the exact layer strain, vaccination record, and feeding plan.</p></article>
+<article class="breed-card"><h3>Kenbro</h3><figure><img src="https://i0.wp.com/farmhatch.co.ke/wp-content/uploads/2023/03/Kenbro.jpg?resize=600%2C400" alt="Reddish-brown Kenbro chicken"><figcaption>Example Kenbro bird. Photo: <a href="https://farmhatch.co.ke/characteristics-of-kenbro-chicken/" target="_blank" rel="noopener noreferrer">FarmHatch</a>.</figcaption></figure><p>An improved dual-purpose type kept for meat and eggs. Confirm the exact line and management advice with the supplier.</p></article>
+<article class="breed-card"><h3>Kuroiler</h3><figure><img src="https://farmbizafrica.com/wp-content/uploads/2018/01/kuroiler-1000x620-1.jpg" alt="Kuroiler chickens foraging in a fenced outdoor area"><figcaption>Example Kuroiler birds. Photo: <a href="https://farmbizafrica.com/new-improved-newcastle-disease-resistant-kuroiler-kienyeji-chicken-in-the-market/" target="_blank" rel="noopener noreferrer">FarmBiz Africa</a>.</figcaption></figure><p>An improved dual-purpose type. Ask the seller whether the chicks are genuine Kuroiler and what vaccination they have received.</p></article>
+<article class="breed-card"><h3>Sasso</h3><figure><img src="https://d1lg8auwtggj9x.cloudfront.net/images/sa31a-v4-speccomp_tlsSMhp.2e16d0ba.fill-610x400-c100.png" alt="Brown Sasso chicken"><figcaption>Example Sasso bird. Photo: <a href="https://southamerica.sasso-poultry.com/es/productos-es/pollos-de-color/" target="_blank" rel="noopener noreferrer">SASSO Poultry</a>.</figcaption></figure><p>A coloured improved type. Sasso offers different lines, so ask which line the supplier is selling and what it is bred to produce.</p></article>
+<article class="breed-card"><h3>Rainbow Rooster</h3><figure><img src="https://kukuchic.com/wp-content/uploads/2025/04/rooster.jpg" alt="Colourful Rainbow Rooster chicken"><figcaption>Example Rainbow Rooster. Photo: <a href="https://kukuchic.com/" target="_blank" rel="noopener noreferrer">KuKuChic</a>.</figcaption></figure><p>An improved dual-purpose type. Confirm whether the chicks are Rainbow Rooster or Rainbow Rooster Plus and ask about current stock.</p></article>
+</div>
+</section>
+<section class="cost-calculator" aria-labelledby="calculator-heading">
+<h2 id="calculator-heading">Estimate your starting costs</h2>
+<p>Enter prices from your local supplier. The calculator adds chick costs, feed costs, and any other costs you enter. It does not save your figures.</p>
+<form id="poultry-cost-form">
+<label for="chick-count">How many chicks will you buy?</label>
+<input id="chick-count" name="chick-count" type="number" min="1" step="1" required>
+<label for="chick-price">Price for one chick (KSh)</label>
+<input id="chick-price" name="chick-price" type="number" min="0" step="0.01" required>
+<label for="feed-bags">Number of feed bags</label>
+<input id="feed-bags" name="feed-bags" type="number" min="0" step="1" required>
+<label for="feed-price">Price for one feed bag (KSh)</label>
+<input id="feed-price" name="feed-price" type="number" min="0" step="0.01" required>
+<label for="other-costs">Other starting costs, such as transport or housing (KSh)</label>
+<input id="other-costs" name="other-costs" type="number" min="0" step="0.01" value="0">
+<button type="submit">Calculate estimate</button>
+</form>
+<p id="poultry-cost-result" class="form-message" role="status" aria-live="polite">Your estimate will appear here.</p>
+<p><small>This is a simple estimate based on the prices and quantities you enter. It is not a quote and may not include every cost of raising chickens.</small></p>
+</section><section><h2>How to choose</h2><ol>
+<li>Choose your goal first: meat, eggs, or both. Broilers suit meat production; layers suit egg production; the improved types are commonly kept for both.</li>
+<li>Compare the full cost of chicks, feed, housing, vaccines, transport, and labour before buying.</li>
+<li>Prepare a dry, airy, secure house with shade, clean bedding, and enough space for the flock.</li>
+<li>Use clean water and the feed designed for the bird's age and type. Ask a livestock officer for a vaccination and health plan for your area.</li>
+<li>Buy from a reputable hatchery or approved seller. Get the breed/strain, hatch date, vaccination details, and receipt in writing.</li>
+</ol></section>
+<section><h2>Check local availability</h2><p>The catalogue reports these improved chicken types across the Coastal region, but does not provide a live count of chicks available in each county. Contact a hatchery or county livestock office to confirm the exact strain, delivery to your area, price, and vaccination record before paying.</p></section>
+<section><h2>Sources and Local Advice</h2><p class="local-advice-note">Coastal conditions vary between farms and counties. Ask your county agriculture or livestock extension officer whether this guidance suits your farm. Confirm current supplier availability and prices before buying; this website does not show live stock or price information.</p><ul>
+<li><a href="https://kilimo.go.ke/wp-content/uploads/2024/08/CATALOGUE-BREEDS-PUBLISHED-VERSION.pdf" target="_blank" rel="noopener noreferrer">Kenya Livestock Breeds Catalogue (improved chicken types and regional distribution)</a></li>
+<li><a href="https://www.kenchic.com/layers/" target="_blank" rel="noopener noreferrer">Kenchic: commercial layer chickens</a></li>
+<li><a href="https://www.kenchic.com/" target="_blank" rel="noopener noreferrer">Kenchic: day-old chicks and poultry information</a></li>
+</ul></section>
+</main>
+<footer><p>PWANIAGRITALKS | Growing the Coast Through Agriculture</p></footer>
+<script src="{{ url_for('static', filename='county-guide.js') }}" defer></script>
+<script src="{{ url_for('static', filename='poultry-calculator.js') }}" defer></script>
+<script src="{{ url_for('static', filename='guide-print.js') }}?v=1" defer></script>
+</body>
+</html>
+
+
+

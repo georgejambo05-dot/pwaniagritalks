@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Farmer Questions | PWANIAGRITALKS</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=12">
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='pwaniagritalks-brand-logo.png') }}?v=3">
+</head>
+<body>
+    <header><h1 class="site-logo-heading"><a href="{{ url_for('home') }}" aria-label="PWANIAGRITALKS home"><img class="site-logo" src="{{ url_for('static', filename='pwaniagritalks-brand-logo.jpg') }}?v=3" alt="PWANIAGRITALKS — Growing the Coast Through Agriculture"></a></h1><p>Farmer questions</p></header>
+    <nav>
+        <a href="{{ url_for('farmers') }}">Registered Farmers</a>
+        <form class="logout-form" method="post" action="{{ url_for('logout') }}">
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+            <button type="submit">Sign out</button>
+        </form>
+    </nav>
+    <main>
+        <section>
+            <h2>Questions from Farmers</h2>
+            <p>Review questions submitted by signed-in farmers and write a reply.</p>
+            <p class="form-message" role="status">Questions waiting for a reply: <strong>{{ unanswered_count }}</strong></p>
+            {% if request.args.get('replied') == 'yes' %}<p class="form-message" role="status">Your reply has been saved for the farmer.</p>{% endif %}
+            {% if request.args.get('error') == 'empty' %}<p class="form-error" role="alert">Please write a reply before saving.</p>{% endif %}
+            {% if request.args.get('error') == 'long' %}<p class="form-error" role="alert">Please keep the reply under 2,000 characters.</p>{% endif %}
+            {% if questions %}
+                <div class="farmer-list">
+                    {% for question in questions %}
+                        <article class="farmer-card">
+                            <h3>{{ question['full_name'] }} · {{ question['location'] }}</h3>
+                            <p><strong>Question:</strong> {{ question['question_text'] }}</p>
+                            {% if question['photo_filename'] %}
+                                <p><img class="question-photo" src="{{ url_for('question_photo', question_id=question['id']) }}" alt="Photo attached by {{ question['full_name'] }}"></p>
+                            {% endif %}
+                            <p><small>Received {{ question['created_at'] }} · {{ question['status'] }}</small></p>
+                            {% if question['answer'] %}
+                                <p><strong>Current reply:</strong> {{ question['answer'] }}</p>
+                                <p><small>Replied {{ question['answered_at'] }}</small></p>
+                            {% endif %}
+                            <form method="post" action="{{ url_for('reply_to_question', question_id=question['id']) }}">
+                                <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                                <label for="answer_{{ question['id'] }}">{{ 'Update reply' if question['answer'] else 'Your reply' }}</label>
+                                <textarea id="answer_{{ question['id'] }}" name="answer" rows="4" maxlength="2000" required>{{ question['answer'] or '' }}</textarea>
+                                <button type="submit">Save Reply</button>
+                            </form>
+                        </article>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p>No farmer questions have been submitted yet.</p>
+            {% endif %}
+        </section>
+    </main>
+    <footer><p>PWANIAGRITALKS | Growing the Coast Through Agriculture</p></footer>
+</body>
+</html>
+
+

@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PWANIAGRITALKS</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=12">
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='pwaniagritalks-brand-logo.png') }}?v=3">
+</head>
+<body>
+    <header>
+        <h1 class="site-logo-heading"><a href="{{ url_for('home') }}" aria-label="PWANIAGRITALKS home"><img class="site-logo" src="{{ url_for('static', filename='pwaniagritalks-brand-logo.jpg') }}?v=3" alt="PWANIAGRITALKS — Growing the Coast Through Agriculture"></a></h1>
+        <p>Growing the Coast Through Agriculture</p>
+    </header>
+    <nav class="home-nav">
+    <div class="home-nav-primary">
+        <a href="/">Home</a>
+        <a href="#guides">Farming Guides</a>
+        <a href="#questions">Ask Question</a>
+        <a href="#register">Register</a>
+    </div>
+    <div class="home-nav-secondary">
+        <a href="{{ url_for('farmer_login') }}">Farmer Login</a>
+        <a href="#founder">Founder</a>
+    </div>
+</nav>
+    <main>
+        <h2>Welcome to PWANIAGRITALKS!</h2>
+        <p>Practical agricultural knowledge for farmers in Kenya's Coastal region.</p>
+
+        <section id="founder">
+            <h2>Meet the Founder</h2>
+            <div class="founder-profile">
+                <img src="{{ url_for('static', filename='founder_george_jambo.jpeg') }}" alt="George Jambo, founder of PWANIAGRITALKS">
+                <div>
+                    <h3>George Jambo</h3>
+                    <p>George is a third-year student at Egerton University, pursuing Agricultural Education and Extension. He is from Kilifi County and founded PWANIAGRITALKS to share practical agricultural knowledge with farmers in Kenya's Coastal region.</p>
+                </div>
+            </div>
+        </section>
+        <section id="guides">
+            <h2>Farming Guides</h2>
+            <p>Choose a guide to learn practical steps for farming in Kenya.</p>
+            <div class="guide-search">
+                <label for="guide-search">Search guides by crop or animal</label>
+                <input id="guide-search" type="search" placeholder="Try maize, poultry, rabbit..." aria-controls="guide-cards">
+                <p id="guide-search-status" class="guide-search-status" aria-live="polite"></p>
+            </div>
+            <div class="farmer-list" id="guide-cards">
+                <article class="farmer-card" data-search-terms="maize corn crops"><h3>Maize</h3><p>County and growing-zone varieties, planting, land preparation, and weeding.</p><a class="button-link" href="{{ url_for('maize_guide') }}">Open maize guide</a></article>
+                <article class="farmer-card" data-search-terms="poultry chickens chicken eggs"><h3>Poultry</h3><p>Improved and commercial poultry breeds, county notes, pictures, and care.</p><a class="button-link" href="{{ url_for('poultry_guide') }}">Open poultry guide</a></article><article class="farmer-card" data-search-terms="rabbit rabbits"><h3>Rabbits</h3><p>Rabbit breeds, housing, feeding, and getting started.</p><a class="button-link" href="{{ url_for('rabbit_guide') }}">Open rabbit guide</a></article>
+                <article class="farmer-card" data-search-terms="dairy cows cow cattle milk"><h3>Dairy cows</h3><p>Dairy breeds, choosing animals, feeding, housing, and care.</p><a class="button-link" href="{{ url_for('dairy_cows_guide') }}">Open dairy cow guide</a></article>
+                <article class="farmer-card" data-search-terms="goat goats"><h3>Goats</h3><p>Local and dairy goat breeds, housing, feeding, and care.</p><a class="button-link" href="{{ url_for('goats_guide') }}">Open goat guide</a></article>
+                <article class="farmer-card" data-search-terms="sustainable agriculture soil water compost climate"><h3>Sustainable agriculture</h3><p>Practical ways to protect soil, save water, and build resilient farms.</p><a class="button-link" href="{{ url_for('sustainable_agriculture_guide') }}">Open sustainable farming guide</a></article>
+            </div>
+        </section>
+        <section id="questions">
+            <h2>Ask an Agricultural Question</h2>
+            <p>Signed-in farmers can send a question to the PWANIAGRITALKS admin for review. You can attach a clear photo of a sick plant or animal to help explain the problem.</p>
+            <p><a class="button-link" href="{{ url_for('farmer_login') }}">Sign in to ask a question</a></p>
+        </section>
+        <section id="contact">
+            <h2>Need Help?</h2>
+            <p>For help using PWANIAGRITALKS, contact us by phone or email:</p>
+            <p><a href="tel:+254715968503">+254 715 968 503</a></p>
+            <p><a href="mailto:pwaniagritalks@gmail.com">pwaniagritalks@gmail.com</a></p>
+        </section>
+        <section id="register">
+            <h2>Farmer Registration</h2>
+            <p>Register to access your farmer account using your name and password.</p>
+            <p>Already registered? <a class="button-link" href="{{ url_for('farmer_login') }}">Farmer login</a></p>
+            {% if registered %}<p class="form-message" role="status">Registration complete. You can now log in with your name and password.</p>{% endif %}
+            {% if error %}<p class="form-error" role="alert">{{ error }}</p>{% endif %}
+            <form action="{{ url_for('home') }}#register" method="post">
+                <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                <label for="full_name">Full name</label>
+                <input type="text" id="full_name" name="full_name" placeholder="e.g. Amina Ali" autocomplete="name" required>
+                <label for="phone">Phone number</label>
+                <input type="tel" id="phone" name="phone" placeholder="e.g. 0712 345 678" minlength="7" maxlength="20" pattern="[0-9+() -]{7,20}" title="Use 7 to 20 digits, spaces, plus signs, or parentheses" required>
+                <label for="location">County or location</label>
+                <input type="text" id="location" name="location" placeholder="e.g. Kilifi County" required>
+                <label for="farming_type">What do you farm?</label>
+                <select id="farming_type" name="farming_type" required>
+                    <option value="" disabled selected>Select a farming type</option>
+                    <option value="crops">Crops</option>
+                    <option value="livestock">Livestock</option>
+                    <option value="mixed">Both crops and livestock</option>
+                    <option value="other">Other</option>
+                </select>
+                <label for="password">Create a password</label>
+                <input type="password" id="password" name="password" minlength="5" autocomplete="new-password" required>
+                <label for="confirmation">Type the password again</label>
+                <input type="password" id="confirmation" name="confirmation" minlength="5" autocomplete="new-password" required>
+                <button type="submit">Register</button>
+            </form>
+            <p><small>Your password is stored as a hash. Keep it private.</small></p>
+        </section>
+    </main>
+    <footer><p>PWANIAGRITALKS | Growing the Coast Through Agriculture</p><p><a href="{{ url_for('login') }}">Admin Login</a></p></footer>
+    <script src="{{ url_for('static', filename='guide-search.js') }}?v=1" defer></script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+

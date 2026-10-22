@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Farmer | PWANIAGRITALKS</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=12">
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='pwaniagritalks-brand-logo.png') }}?v=3">
+</head>
+<body>
+    <header><h1 class="site-logo-heading"><a href="{{ url_for('home') }}" aria-label="PWANIAGRITALKS home"><img class="site-logo" src="{{ url_for('static', filename='pwaniagritalks-brand-logo.jpg') }}?v=3" alt="PWANIAGRITALKS — Growing the Coast Through Agriculture"></a></h1><p>Growing the Coast Through Agriculture</p></header>
+    <nav>
+        <a href="{{ url_for('farmers') }}">Back to Registered Farmers</a>
+        <a href="{{ url_for('home') }}">Home</a>
+        <form class="logout-form" method="post" action="{{ url_for('logout') }}">
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+            <button type="submit">Sign out</button>
+        </form>
+    </nav>
+    <main>
+        <section>
+            <h2>Edit Farmer Details</h2>
+            <p>Change the information below, then save your updates.</p>
+            {% if error %}<p class="form-error" role="alert">{{ error }}</p>{% endif %}
+            <form method="post">
+                <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                <label for="full_name">Full name</label>
+                <input type="text" id="full_name" name="full_name" value="{{ farmer['full_name'] }}" required>
+                <label for="phone">Phone number</label>
+                <input type="tel" id="phone" name="phone" value="{{ farmer['phone'] }}" minlength="7" maxlength="20" pattern="[0-9+() -]{7,20}" title="Use 7 to 20 digits, spaces, plus signs, or parentheses" required>
+                <label for="location">County or location</label>
+                <input type="text" id="location" name="location" value="{{ farmer['location'] }}" required>
+                <label for="farming_type">What do you farm?</label>
+                <select id="farming_type" name="farming_type" required>
+                    <option value="crops" {% if farmer['farming_type'] == 'crops' %}selected{% endif %}>Crops</option>
+                    <option value="livestock" {% if farmer['farming_type'] == 'livestock' %}selected{% endif %}>Livestock</option>
+                    <option value="mixed" {% if farmer['farming_type'] == 'mixed' %}selected{% endif %}>Both crops and livestock</option>
+                    <option value="other" {% if farmer['farming_type'] == 'other' %}selected{% endif %}>Other</option>
+                </select>
+                <label for="new_password">Set or reset farmer login password (optional)</label>
+                <input type="password" id="new_password" name="new_password" minlength="5" autocomplete="new-password">
+                <small>Leave blank to keep the current password. Share any new password privately with the farmer.</small>
+                <button type="submit">Save Changes</button>
+            </form>
+        </section>
+    </main>
+    <footer><p>PWANIAGRITALKS | Growing the Coast Through Agriculture</p></footer>
+</body>
+</html>
+
+

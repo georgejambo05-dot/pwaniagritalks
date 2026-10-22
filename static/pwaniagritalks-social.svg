@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+<title id="title">PWANIAGRITALKS coastal farming logo</title>
+<desc id="desc">A coconut palm, maize plant, chicken, rabbit and coastal waves.</desc>
+<defs><clipPath id="seal"><circle cx="256" cy="256" r="228"/></clipPath></defs>
+<circle cx="256" cy="256" r="246" fill="#fff8e8" stroke="#1b5e20" stroke-width="12"/>
+<g clip-path="url(#seal)">
+ <circle cx="256" cy="256" r="228" fill="#e8f2df"/>
+ <circle cx="285" cy="137" r="54" fill="#efb347"/>
+ <!-- Coconut palm -->
+ <path d="M135 354 Q160 269 139 157" fill="none" stroke="#79563b" stroke-width="15" stroke-linecap="round"/>
+ <path d="M139 157 Q89 114 61 108 M139 157 Q96 88 98 66 M139 157 Q127 88 148 57 M139 157 Q160 91 190 79 M139 157 Q186 110 217 109" fill="none" stroke="#287444" stroke-width="13" stroke-linecap="round"/>
+ <path d="M139 157 Q83 131 53 124 M139 157 Q105 111 81 92 M139 157 Q137 102 133 77 M139 157 Q171 109 178 97 M139 157 Q190 128 204 127" fill="none" stroke="#62a45b" stroke-width="6" stroke-linecap="round"/>
+ <circle cx="149" cy="169" r="12" fill="#9a6a36"/><circle cx="170" cy="164" r="11" fill="#9a6a36"/><circle cx="158" cy="185" r="10" fill="#bd8844"/>
+ <!-- Maize plant and cob -->
+ <path d="M258 370 Q251 274 263 151" fill="none" stroke="#287444" stroke-width="15" stroke-linecap="round"/>
+ <path d="M258 316 Q215 274 186 276 Q206 321 257 340 M258 273 Q300 226 337 229 Q317 273 260 297 M260 222 Q224 188 201 191 Q216 224 260 245 M263 190 Q295 155 322 158 Q309 188 263 212" fill="#438b48" stroke="#287444" stroke-width="4" stroke-linejoin="round"/>
+ <g transform="rotate(-12 286 248)">
+  <rect x="270" y="193" width="38" height="111" rx="19" fill="#f2c14e" stroke="#b57b27" stroke-width="4"/>
+  <path d="M278 205v86 M288 201v96 M298 205v86 M274 222h30 M272 240h34 M272 258h34 M274 277h30" stroke="#d99e31" stroke-width="3"/>
+  <path d="M272 296 Q248 276 255 239 Q263 262 275 270 M306 296 Q328 275 320 238 Q313 261 303 270" fill="#65a64f" stroke="#287444" stroke-width="3" stroke-linejoin="round"/>
+ </g>
+ <!-- Chicken -->
+ <path d="M100 337 Q71 322 72 299 Q91 306 108 320 Q97 291 110 282 Q128 302 128 318" fill="#d79b3d" stroke="#9c6a2d" stroke-width="4" stroke-linejoin="round"/>
+ <ellipse cx="132" cy="339" rx="50" ry="34" fill="#d79b3d" stroke="#9c6a2d" stroke-width="4"/>
+ <path d="M158 337 Q172 324 171 307 L164 294 Q172 280 188 284 Q202 288 202 303 Q202 320 187 326 L182 342" fill="#d79b3d" stroke="#9c6a2d" stroke-width="4" stroke-linejoin="round"/>
+ <path d="M174 284 Q170 270 180 274 Q188 265 192 279 Q202 275 198 289Z" fill="#b95a45"/>
+ <path d="M200 298 L221 305 L200 311Z" fill="#efb347"/>
+ <circle cx="190" cy="296" r="3.5" fill="#26382d"/>
+ <path d="M126 369v18 M151 368v19 M118 388h15 M144 387h15" fill="none" stroke="#79563b" stroke-width="5" stroke-linecap="round"/>
+ <!-- Rabbit -->
+ <ellipse cx="377" cy="345" rx="48" ry="32" fill="#287444"/>
+ <ellipse cx="342" cy="307" rx="31" ry="29" fill="#438b48"/>
+ <ellipse cx="322" cy="265" rx="13" ry="42" transform="rotate(-13 322 265)" fill="#287444"/>
+ <ellipse cx="350" cy="262" rx="13" ry="46" transform="rotate(8 350 262)" fill="#438b48"/>
+ <path d="M317 270 Q321 238 326 231 M346 267 Q354 236 350 224" fill="none" stroke="#f0c5b7" stroke-width="5" stroke-linecap="round"/>
+ <circle cx="335" cy="303" r="4" fill="#fff8e8"/><circle cx="335" cy="303" r="2" fill="#26382d"/>
+ <ellipse cx="313" cy="317" rx="5" ry="4" fill="#efb7a9"/>
+ <path d="M358 370 Q375 383 389 370 M392 365 Q410 383 426 367" fill="none" stroke="#1b5e20" stroke-width="8" stroke-linecap="round"/>
+ <!-- Coastline waves -->
+ <path d="M20 394 Q75 370 130 394 T240 394 T350 394 T460 394 T570 394 V530 H20Z" fill="#147d79"/>
+ <path d="M20 415 Q75 393 130 415 T240 415 T350 415 T460 415 T570 415" fill="none" stroke="#fff8e8" stroke-width="8" stroke-linecap="round"/>
+ <path d="M20 449 Q75 427 130 449 T240 449 T350 449 T460 449 T570 449" fill="none" stroke="#f2c14e" stroke-width="6" stroke-linecap="round"/>
+</g>
+</svg>

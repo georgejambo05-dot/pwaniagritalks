@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registered Farmers | PWANIAGRITALKS</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=12">
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='pwaniagritalks-brand-logo.png') }}?v=3">
+</head>
+<body>
+    <header>
+        <h1 class="site-logo-heading"><a href="{{ url_for('home') }}" aria-label="PWANIAGRITALKS home"><img class="site-logo" src="{{ url_for('static', filename='pwaniagritalks-brand-logo.jpg') }}?v=3" alt="PWANIAGRITALKS — Growing the Coast Through Agriculture"></a></h1>
+        <p>Growing the Coast Through Agriculture</p>
+    </header>
+    <nav>
+        <a href="{{ url_for('home') }}">Home</a>
+        <a href="{{ url_for('home') }}#register">Register a Farmer</a>
+        <a href="{{ url_for('admin_questions') }}">Farmer Questions</a>
+        <span>Signed in as {{ admin_username }}</span>
+        <form class="logout-form" method="post" action="{{ url_for('logout') }}">
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+            <button type="submit">Sign out</button>
+        </form>
+    </nav>
+    <main>
+        <section>
+            <h2>Registered Farmers</h2>
+            <p>These registrations are stored in the local database on this computer.</p>
+            <div class="summary-grid">
+                <article class="summary-card"><h3>{{ total_farmers }}</h3><p>Total farmers</p></article>
+                <article class="summary-card"><h3>{{ counts_by_type.get('crops', 0) }}</h3><p>Crop farmers</p></article>
+                <article class="summary-card"><h3>{{ counts_by_type.get('livestock', 0) }}</h3><p>Livestock farmers</p></article>
+                <article class="summary-card"><h3>{{ counts_by_type.get('mixed', 0) }}</h3><p>Mixed farming</p></article>
+                <article class="summary-card"><h3>{{ counts_by_type.get('other', 0) }}</h3><p>Other</p></article>
+            </div>
+            {% if request.args.get('updated') == 'yes' %}<p class="form-message" role="status">The farmer's details have been updated.</p>{% endif %}
+            {% if request.args.get('deleted') == 'yes' %}<p class="form-message" role="status">The farmer registration was deleted.</p>{% endif %}
+            <form class="search-form" method="get" action="{{ url_for('farmers') }}">
+                <label for="q">Search by name, location, or farming type</label>
+                <input type="search" id="q" name="q" value="{{ search_text }}" placeholder="e.g. Kilifi or crops">
+                <button type="submit">Search</button>
+                {% if search_text %}<a class="clear-search" href="{{ url_for('farmers') }}">Clear search</a>{% endif %}
+            </form>
+            <p><a class="button-link" href="{{ url_for('export_farmers', q=search_text) }}">Download this list as CSV</a></p>
+            {% if farmers %}
+                <div class="farmer-list">
+                    {% for farmer in farmers %}
+                        <article class="farmer-card">
+                            <h3>{{ farmer['full_name'] }}</h3>
+                            <p><strong>Location:</strong> {{ farmer['location'] }}</p>
+                            <p><strong>Farming type:</strong> {{ farmer['farming_type']|replace('_', ' ')|title }}</p>
+                            <a class="button-link" href="{{ url_for('edit_farmer', farmer_id=farmer['id']) }}">Edit details</a>
+                            <form class="delete-form" method="post" action="{{ url_for('delete_farmer', farmer_id=farmer['id']) }}" onsubmit="return confirm('Delete this farmer registration? This cannot be undone.');">
+                                <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                                <button class="delete-button" type="submit">Delete registration</button>
+                            </form>
+                        </article>
+                    {% endfor %}
+                </div>
+            {% elif search_text %}
+                <p>No farmers matched “{{ search_text }}”. Try a different search.</p>
+            {% else %}
+                <p>No farmers have registered yet.</p>
+            {% endif %}
+        </section>
+    </main>
+    <footer><p>PWANIAGRITALKS | Growing the Coast Through Agriculture</p></footer>
+</body>
+</html>
+
+
