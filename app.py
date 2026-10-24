@@ -3,6 +3,7 @@ import io
 import os
 import secrets
 import sqlite3
+from contextlib import contextmanager
 from pathlib import Path
 
 from functools import wraps
@@ -12,6 +13,16 @@ from werkzeug.security import check_password_hash, generate_password_hash
 
 app = Flask(__name__)
 DATABASE = Path(__file__).with_name("farmers.db")
+
+
+@contextmanager
+def database_connection():
+    connection = sqlite3.connect(DATABASE)
+    try:
+        with connection:
+            yield connection
+    finally:
+        connection.close()
 
 
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'change-this-to-a-random-secret-string')
@@ -63,7 +74,7 @@ def check_post_token():
 
 def create_database():
     """Create the tables and add the password column to older farmer databases."""
-    with sqlite3.connect(DATABASE) as connection:
+    with database_connection() as connection:
         connection.execute("""
             CREATE TABLE IF NOT EXISTS farmers (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -107,7 +118,7 @@ def create_database():
 
 
 def admin_exists():
-    with sqlite3.connect(DATABASE) as connection:
+    with database_connection() as connection:
         return connection.execute("SELECT 1 FROM admin_users LIMIT 1").fetchone() is not None
 
 
@@ -131,7 +142,7 @@ def farmer_login_required(view):
 
 def get_farmer(farmer_id):
     """Find one farmer by ID, or return None if it does not exist."""
-    with sqlite3.connect(DATABASE) as connection:
+    with database_connection() as connection:
         connection.row_factory = sqlite3.Row
         return connection.execute(
             "SELECT * FROM farmers WHERE id = ?", (farmer_id,)
@@ -163,7 +174,7 @@ def home():
             ), 400
 
         password_hash = generate_password_hash(password)
-        with sqlite3.connect(DATABASE) as connection:
+        with database_connection() as connection:
             connection.execute(
                 """INSERT INTO farmers
                    (full_name, phone, location, farming_type, password_hash)
@@ -209,7 +220,7 @@ def farmer_login():
     if request.method == "POST":
         full_name = request.form.get("full_name", "").strip()
         password = request.form.get("password", "")
-        with sqlite3.connect(DATABASE) as connection:
+        with database_connection() as connection:
             matching_farmers = connection.execute(
                 """SELECT id, password_hash FROM farmers
                    WHERE full_name = ? COLLATE NOCASE AND password_hash IS NOT NULL""",
@@ -257,7 +268,7 @@ def farmer_change_password():
         elif new_password != confirmation:
             error = "The two new password entries do not match."
         else:
-            with sqlite3.connect(DATABASE) as connection:
+            with database_connection() as connection:
                 connection.execute(
                     "UPDATE farmers SET password_hash = ? WHERE id = ?",
                     (generate_password_hash(new_password), session["farmer_id"]),
@@ -297,7 +308,7 @@ def edit_own_profile():
                 "edit_my_profile.html", farmer=farmer_values, error=error
             ), 400
 
-        with sqlite3.connect(DATABASE) as connection:
+        with database_connection() as connection:
             connection.execute(
                 "UPDATE farmers SET phone = ?, location = ?, farming_type = ? WHERE id = ?",
                 (phone, location, farming_type, session["farmer_id"]),
@@ -358,7 +369,7 @@ def farmer_questions():
                 saved_photo_name = f"{secrets.token_hex(24)}{photo_extension}"
                 (QUESTION_PHOTO_DIR / saved_photo_name).write_bytes(photo_bytes)
             try:
-                with sqlite3.connect(DATABASE) as connection:
+                with database_connection() as connection:
                     connection.execute(
                         "INSERT INTO farmer_questions (farmer_id, question_text, photo_filename) VALUES (?, ?, ?)",
                         (farmer_id, question_text, saved_photo_name),
@@ -369,7 +380,7 @@ def farmer_questions():
                 raise
             return redirect(url_for("farmer_questions", sent="yes"))
 
-    with sqlite3.connect(DATABASE) as connection:
+    with database_connection() as connection:
         connection.row_factory = sqlite3.Row
         my_questions = connection.execute(
             """SELECT id, question_text, created_at, status, answer, answered_at, photo_filename FROM farmer_questions
@@ -385,7 +396,7 @@ def farmer_questions():
 
 @app.route("/question-photo/<int:question_id>")
 def question_photo(question_id):
-    with sqlite3.connect(DATABASE) as connection:
+    with database_connection() as connection:
         connection.row_factory = sqlite3.Row
         question = connection.execute(
             "SELECT farmer_id, photo_filename FROM farmer_questions WHERE id = ?",
@@ -407,7 +418,7 @@ def question_photo(question_id):
 @app.route("/questions")
 @login_required
 def admin_questions():
-    with sqlite3.connect(DATABASE) as connection:
+    with database_connection() as connection:
         connection.row_factory = sqlite3.Row
         questions = connection.execute(
             """SELECT farmer_questions.id, farmer_questions.question_text,
@@ -434,7 +445,7 @@ def reply_to_question(question_id):
     if len(answer) > 2000:
         return redirect(url_for("admin_questions", error="long"))
 
-    with sqlite3.connect(DATABASE) as connection:
+    with database_connection() as connection:
         question_exists = connection.execute(
             "SELECT 1 FROM farmer_questions WHERE id = ?", (question_id,)
         ).fetchone()
@@ -468,7 +479,7 @@ def setup():
         elif password != confirmation:
             error = "The two password entries do not match."
         else:
-            with sqlite3.connect(DATABASE) as connection:
+            with database_connection() as connection:
                 connection.execute(
                     "INSERT INTO admin_users (username, password_hash) VALUES (?, ?)",
                     (username, generate_password_hash(password)),
@@ -489,7 +500,7 @@ def login():
     if request.method == "POST":
         username = request.form.get("username", "").strip()
         password = request.form.get("password", "")
-        with sqlite3.connect(DATABASE) as connection:
+        with database_connection() as connection:
             admin = connection.execute(
                 "SELECT username, password_hash FROM admin_users WHERE username = ?",
                 (username,),
@@ -516,7 +527,7 @@ def logout():
 @login_required
 def farmers():
     search_text = request.args.get("q", "").strip()
-    with sqlite3.connect(DATABASE) as connection:
+    with database_connection() as connection:
         connection.row_factory = sqlite3.Row
         if search_text:
             search_pattern = f"%{search_text}%"
@@ -547,7 +558,7 @@ def farmers():
 @login_required
 def export_farmers():
     search_text = request.args.get("q", "").strip()
-    with sqlite3.connect(DATABASE) as connection:
+    with database_connection() as connection:
         if search_text:
             search_pattern = f"%{search_text}%"
             saved_farmers = connection.execute(
@@ -616,7 +627,7 @@ def edit_farmer(farmer_id):
                 error="A new farmer password must contain at least 5 characters."
             ), 400
 
-        with sqlite3.connect(DATABASE) as connection:
+        with database_connection() as connection:
             if new_password:
                 connection.execute(
                     """UPDATE farmers SET full_name = ?, phone = ?, location = ?,
@@ -639,7 +650,7 @@ def edit_farmer(farmer_id):
 @app.route("/farmers/<int:farmer_id>/delete", methods=["POST"])
 @login_required
 def delete_farmer(farmer_id):
-    with sqlite3.connect(DATABASE) as connection:
+    with database_connection() as connection:
         connection.execute("DELETE FROM farmers WHERE id = ?", (farmer_id,))
     return redirect(url_for("farmers", deleted="yes"))
 
