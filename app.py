@@ -2,7 +2,7 @@ import csv
 import io
 import os
 import secrets
-from flask_sqlalchemy import SQLAlchemy
+import sqlite3
 from pathlib import Path
 
 from functools import wraps
@@ -11,38 +11,10 @@ from flask import Flask, Response, abort, redirect, render_template, request, se
 from werkzeug.security import check_password_hash, generate_password_hash
 
 app = Flask(__name__)
+DATABASE = Path(__file__).with_name("farmers.db")
 
 
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'change-this-to-a-random-secret-string')
-
-app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL')
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-db = SQLAlchemy(app)
-class Farmer(db.Model):
-    __tablename__ = 'farmers'
-    id = db.Column(db.Integer, primary_key=True)
-    full_name = db.Column(db.String(100), nullable=False)
-    phone = db.Column(db.String(20))
-    location = db.Column(db.String(200))
-    farming_type = db.Column(db.String(100))
-farming_type = db.Column(db.String(100))
-class AdminUser(db.Model):
-    __tablename__ = 'admin_users'
-    id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(100), unique=True, nullable=False)
-    password_hash = db.Column(db.String(200), nullable=False)
-
-class FarmerQuestion(db.Model):
-    __tablename__ = 'farmer_questions'
-    id = db.Column(db.Integer, primary_key=True)
-    farmer_id = db.Column(db.Integer, db.ForeignKey('farmers.id'), nullable=False)
-    question_text = db.Column(db.Text, nullable=False)
-    created_at = db.Column(db.DateTime, default=db.func.now())
-    status = db.Column(db.String(100), default='Waiting for a response')
-    answer = db.Column(db.Text)
-    answered_at = db.Column(db.DateTime)
-    photo_filename = db.Column(db.String(255))
-
 
 QUESTION_PHOTO_DIR = Path(__file__).with_name("instance") / "question_photos"
 MAX_QUESTION_PHOTO_BYTES = 5 * 1024 * 1024
@@ -191,15 +163,13 @@ def home():
             ), 400
 
         password_hash = generate_password_hash(password)
-                new_farmer = Farmer(
-            full_name=full_name,
-            phone=phone,
-            location=location,
-            farming_type=farming_type,
-            password_hash=password_hash
-        )
-        db.session.add(new_farmer)
-        db.session.commit()
+        with sqlite3.connect(DATABASE) as connection:
+            connection.execute(
+                """INSERT INTO farmers
+                   (full_name, phone, location, farming_type, password_hash)
+                   VALUES (?, ?, ?, ?, ?)""",
+                (full_name, phone, location, farming_type, password_hash),
+            )
         
 
         return redirect(url_for("home", registered="yes") + "#register")
@@ -678,10 +648,6 @@ create_database()
 
 if __name__ == "__main__":
     app.run(debug=True)
-    with app.app_context():
-    db.create_all()
-    with app.app_context():
-    db.create_all()
     
     
 
