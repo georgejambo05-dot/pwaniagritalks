@@ -30,6 +30,30 @@ class FarmerRegistrationTest(unittest.TestCase):
         )
         self.temp_dir.cleanup()
 
+    def test_database_connection_closes_after_context(self):
+        with app_module.database_connection() as connection:
+            connection.execute("SELECT 1")
+
+        with self.assertRaises(sqlite3.ProgrammingError):
+            connection.execute("SELECT 1")
+
+    def test_database_connection_rolls_back_on_error(self):
+        with self.assertRaises(RuntimeError):
+            with app_module.database_connection() as connection:
+                connection.execute(
+                    "INSERT INTO admin_users (username, password_hash) VALUES (?, ?)",
+                    ("temporary-admin", "hash"),
+                )
+                raise RuntimeError("force rollback")
+
+        with app_module.database_connection() as connection:
+            count = connection.execute(
+                "SELECT COUNT(*) FROM admin_users WHERE username = ?",
+                ("temporary-admin",),
+            ).fetchone()[0]
+
+        self.assertEqual(count, 0)
+
     def test_registration_persists_farmer_with_hashed_password(self):
         response = self.client.post(
             "/",
@@ -47,7 +71,7 @@ class FarmerRegistrationTest(unittest.TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertIn("registered=yes", response.headers["Location"])
 
-        with sqlite3.connect(app_module.DATABASE) as connection:
+        with app_module.database_connection() as connection:
             farmer = connection.execute(
                 """SELECT full_name, phone, location, farming_type, password_hash
                    FROM farmers"""
