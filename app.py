@@ -14,6 +14,14 @@ app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
+class Farmer(db.Model):
+    __tablename__ = 'farmers'
+    id = db.Column(db.Integer, primary_key=True)
+    full_name = db.Column(db.String(100), nullable=False)
+    phone = db.Column(db.String(20))
+    location = db.Column(db.String(200))
+    farming_type = db.Column(db.String(100))
+    
 
 QUESTION_PHOTO_DIR = Path(__file__).with_name("instance") / "question_photos"
 MAX_QUESTION_PHOTO_BYTES = 5 * 1024 * 1024
