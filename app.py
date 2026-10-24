@@ -11,6 +11,10 @@ from flask import Flask, Response, abort, redirect, render_template, request, se
 from werkzeug.security import check_password_hash, generate_password_hash
 
 app = Flask(__name__)
+
+
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'change-this-to-a-random-secret-string')
+
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
@@ -676,6 +680,9 @@ if __name__ == "__main__":
     app.run(debug=True)
     with app.app_context():
     db.create_all()
+    with app.app_context():
+    db.create_all()
+    
     
 
 
