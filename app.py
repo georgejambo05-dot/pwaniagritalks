@@ -2,14 +2,19 @@ import csv
 import io
 import os
 import secrets
-import sqlite3
-from functools import wraps
+from flask_sqlalchemy import SQLAlchemy
 from pathlib import Path
+
+from functools import wraps
+
 from flask import Flask, Response, abort, redirect, render_template, request, send_from_directory, session, url_for
 from werkzeug.security import check_password_hash, generate_password_hash
 
 app = Flask(__name__)
-DATABASE = Path(__file__).with_name("farmers.db")
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL')
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+db = SQLAlchemy(app)
+
 QUESTION_PHOTO_DIR = Path(__file__).with_name("instance") / "question_photos"
 MAX_QUESTION_PHOTO_BYTES = 5 * 1024 * 1024
 SECRET_KEY_FILE = Path(__file__).with_name(".flask_secret_key")
@@ -641,6 +646,9 @@ create_database()
 
 if __name__ == "__main__":
     app.run(debug=True)
+    with app.app_context():
+    db.create_all()
+    
 
 
 
