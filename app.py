@@ -2,7 +2,8 @@ import csv
 import io
 import os
 import secrets
-import sqlite3
+import psycopg
+from psycopg.rows import dict_row
 from contextlib import contextmanager
 from pathlib import Path
 
@@ -12,12 +13,14 @@ from flask import Flask, Response, abort, redirect, render_template, request, se
 from werkzeug.security import check_password_hash, generate_password_hash
 
 app = Flask(__name__)
-DATABASE = Path(__file__).with_name("farmers.db")
+DATABASE_URL = os.environ.get("DATABASE_URL")
 
 
 @contextmanager
 def database_connection():
-    connection = sqlite3.connect(DATABASE)
+    if not DATABASE_URL:
+        raise RuntimeError("Set DATABASE_URL to your Neon PostgreSQL connection string.")
+    connection = psycopg.connect(DATABASE_URL, row_factory=dict_row)
     try:
         with connection:
             yield connection
@@ -77,7 +80,7 @@ def create_database():
     with database_connection() as connection:
         connection.execute("""
             CREATE TABLE IF NOT EXISTS farmers (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                id BIGSERIAL PRIMARY KEY,
                 full_name TEXT NOT NULL,
                 phone TEXT NOT NULL,
                 location TEXT NOT NULL,
@@ -86,33 +89,37 @@ def create_database():
             )
         """)
         columns = {
-            row[1] for row in connection.execute("PRAGMA table_info(farmers)").fetchall()
+            row["column_name"] for row in connection.execute(
+                "SELECT column_name FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'farmers'"
+            ).fetchall()
         }
         if "password_hash" not in columns:
             connection.execute("ALTER TABLE farmers ADD COLUMN password_hash TEXT")
         connection.execute("""
             CREATE TABLE IF NOT EXISTS admin_users (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                id BIGSERIAL PRIMARY KEY,
                 username TEXT NOT NULL UNIQUE,
                 password_hash TEXT NOT NULL
             )
         """)
         connection.execute("""
             CREATE TABLE IF NOT EXISTS farmer_questions (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                farmer_id INTEGER NOT NULL,
+                id BIGSERIAL PRIMARY KEY,
+                farmer_id BIGINT NOT NULL,
                 question_text TEXT NOT NULL,
-                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 status TEXT NOT NULL DEFAULT 'Waiting for a response'
             )
         """)
         question_columns = {
-            row[1] for row in connection.execute("PRAGMA table_info(farmer_questions)").fetchall()
+            row["column_name"] for row in connection.execute(
+                "SELECT column_name FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'farmer_questions'"
+            ).fetchall()
         }
         if "answer" not in question_columns:
             connection.execute("ALTER TABLE farmer_questions ADD COLUMN answer TEXT")
         if "answered_at" not in question_columns:
-            connection.execute("ALTER TABLE farmer_questions ADD COLUMN answered_at TEXT")
+            connection.execute("ALTER TABLE farmer_questions ADD COLUMN answered_at TIMESTAMP")
         if "photo_filename" not in question_columns:
             connection.execute("ALTER TABLE farmer_questions ADD COLUMN photo_filename TEXT")
 
@@ -143,9 +150,8 @@ def farmer_login_required(view):
 def get_farmer(farmer_id):
     """Find one farmer by ID, or return None if it does not exist."""
     with database_connection() as connection:
-        connection.row_factory = sqlite3.Row
         return connection.execute(
-            "SELECT * FROM farmers WHERE id = ?", (farmer_id,)
+            "SELECT * FROM farmers WHERE id = %s", (farmer_id,)
         ).fetchone()
 
 
@@ -178,7 +184,7 @@ def home():
             connection.execute(
                 """INSERT INTO farmers
                    (full_name, phone, location, farming_type, password_hash)
-                   VALUES (?, ?, ?, ?, ?)""",
+                   VALUES (%s, %s, %s, %s, %s)""",
                 (full_name, phone, location, farming_type, password_hash),
             )
         
@@ -223,11 +229,13 @@ def farmer_login():
         with database_connection() as connection:
             matching_farmers = connection.execute(
                 """SELECT id, password_hash FROM farmers
-                   WHERE full_name = ? COLLATE NOCASE AND password_hash IS NOT NULL""",
+                   WHERE full_name ILIKE %s AND password_hash IS NOT NULL""",
                 (full_name,),
             ).fetchall()
 
-        for farmer_id, password_hash in matching_farmers:
+        for matching_farmer in matching_farmers:
+            farmer_id = matching_farmer["id"]
+            password_hash = matching_farmer["password_hash"]
             if check_password_hash(password_hash, password):
                 session.clear()
                 session["farmer_id"] = farmer_id
@@ -270,7 +278,7 @@ def farmer_change_password():
         else:
             with database_connection() as connection:
                 connection.execute(
-                    "UPDATE farmers SET password_hash = ? WHERE id = ?",
+                    "UPDATE farmers SET password_hash = %s WHERE id = %s",
                     (generate_password_hash(new_password), session["farmer_id"]),
                 )
             return redirect(url_for("farmer_portal", changed="yes"))
@@ -310,7 +318,7 @@ def edit_own_profile():
 
         with database_connection() as connection:
             connection.execute(
-                "UPDATE farmers SET phone = ?, location = ?, farming_type = ? WHERE id = ?",
+                "UPDATE farmers SET phone = %s, location = %s, farming_type = %s WHERE id = %s",
                 (phone, location, farming_type, session["farmer_id"]),
             )
         return redirect(url_for("farmer_portal", updated="yes"))
@@ -371,7 +379,7 @@ def farmer_questions():
             try:
                 with database_connection() as connection:
                     connection.execute(
-                        "INSERT INTO farmer_questions (farmer_id, question_text, photo_filename) VALUES (?, ?, ?)",
+                        "INSERT INTO farmer_questions (farmer_id, question_text, photo_filename) VALUES (%s, %s, %s)",
                         (farmer_id, question_text, saved_photo_name),
                     )
             except Exception:
@@ -381,10 +389,9 @@ def farmer_questions():
             return redirect(url_for("farmer_questions", sent="yes"))
 
     with database_connection() as connection:
-        connection.row_factory = sqlite3.Row
         my_questions = connection.execute(
             """SELECT id, question_text, created_at, status, answer, answered_at, photo_filename FROM farmer_questions
-               WHERE farmer_id = ? ORDER BY id DESC""",
+               WHERE farmer_id = %s ORDER BY id DESC""",
             (farmer_id,),
         ).fetchall()
 
@@ -397,9 +404,8 @@ def farmer_questions():
 @app.route("/question-photo/<int:question_id>")
 def question_photo(question_id):
     with database_connection() as connection:
-        connection.row_factory = sqlite3.Row
         question = connection.execute(
-            "SELECT farmer_id, photo_filename FROM farmer_questions WHERE id = ?",
+            "SELECT farmer_id, photo_filename FROM farmer_questions WHERE id = %s",
             (question_id,),
         ).fetchone()
     if question is None or not question["photo_filename"]:
@@ -419,7 +425,6 @@ def question_photo(question_id):
 @login_required
 def admin_questions():
     with database_connection() as connection:
-        connection.row_factory = sqlite3.Row
         questions = connection.execute(
             """SELECT farmer_questions.id, farmer_questions.question_text,
                       farmer_questions.created_at, farmer_questions.status,
@@ -430,8 +435,8 @@ def admin_questions():
                ORDER BY farmer_questions.id DESC"""
         ).fetchall()
         unanswered_count = connection.execute(
-            "SELECT COUNT(*) FROM farmer_questions WHERE answer IS NULL OR TRIM(answer) = ''"
-        ).fetchone()[0]
+            "SELECT COUNT(*) AS count FROM farmer_questions WHERE answer IS NULL OR TRIM(answer) = ''"
+        ).fetchone()["count"]
     return render_template(
         "admin_questions.html", questions=questions, unanswered_count=unanswered_count
     )
@@ -447,27 +452,33 @@ def reply_to_question(question_id):
 
     with database_connection() as connection:
         question_exists = connection.execute(
-            "SELECT 1 FROM farmer_questions WHERE id = ?", (question_id,)
+            "SELECT 1 FROM farmer_questions WHERE id = %s", (question_id,)
         ).fetchone()
         if question_exists is None:
             abort(404)
         connection.execute(
             """UPDATE farmer_questions
-               SET answer = ?, answered_at = CURRENT_TIMESTAMP, status = 'Answered'
-               WHERE id = ?""",
+               SET answer = %s, answered_at = CURRENT_TIMESTAMP, status = 'Answered'
+               WHERE id = %s""",
             (answer, question_id),
         )
     return redirect(url_for("admin_questions", replied="yes"))
 
 @app.route("/setup", methods=["GET", "POST"])
 def setup():
-    if request.remote_addr not in {"127.0.0.1", "::1"}:
+    # Remote setup is permitted only when a private, one-time environment token is configured.
+    setup_token = os.environ.get("ADMIN_SETUP_TOKEN", "")
+    if not setup_token:
         abort(403)
     if admin_exists():
         return redirect(url_for("login"))
 
     error = None
     if request.method == "POST":
+        submitted_token = request.form.get("setup_token", "")
+        if not secrets.compare_digest(submitted_token, setup_token):
+            abort(403)
+
         username = request.form.get("username", "").strip()
         password = request.form.get("password", "")
         confirmation = request.form.get("confirmation", "")
@@ -481,7 +492,7 @@ def setup():
         else:
             with database_connection() as connection:
                 connection.execute(
-                    "INSERT INTO admin_users (username, password_hash) VALUES (?, ?)",
+                    "INSERT INTO admin_users (username, password_hash) VALUES (%s, %s)",
                     (username, generate_password_hash(password)),
                 )
             return redirect(url_for("login", created="yes"))
@@ -492,7 +503,7 @@ def setup():
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if not admin_exists():
-        if request.remote_addr in {"127.0.0.1", "::1"}:
+        if os.environ.get("ADMIN_SETUP_TOKEN"):
             return redirect(url_for("setup"))
         abort(403)
 
@@ -502,13 +513,13 @@ def login():
         password = request.form.get("password", "")
         with database_connection() as connection:
             admin = connection.execute(
-                "SELECT username, password_hash FROM admin_users WHERE username = ?",
+                "SELECT username, password_hash FROM admin_users WHERE username = %s",
                 (username,),
             ).fetchone()
 
-        if admin and check_password_hash(admin[1], password):
+        if admin and check_password_hash(admin["password_hash"], password):
             session.clear()
-            session["admin_username"] = admin[0]
+            session["admin_username"] = admin["username"]
             return redirect(url_for("farmers"))
         error = "The username or password is incorrect."
 
@@ -528,12 +539,11 @@ def logout():
 def farmers():
     search_text = request.args.get("q", "").strip()
     with database_connection() as connection:
-        connection.row_factory = sqlite3.Row
         if search_text:
             search_pattern = f"%{search_text}%"
             saved_farmers = connection.execute(
                 """SELECT id, full_name, location, farming_type FROM farmers
-                   WHERE full_name LIKE ? OR location LIKE ? OR farming_type LIKE ?
+                   WHERE full_name LIKE %s OR location LIKE %s OR farming_type LIKE %s
                    ORDER BY id DESC""",
                 (search_pattern, search_pattern, search_pattern),
             ).fetchall()
@@ -542,9 +552,11 @@ def farmers():
                 "SELECT id, full_name, location, farming_type FROM farmers ORDER BY id DESC"
             ).fetchall()
 
-        counts_by_type = dict(connection.execute(
-            "SELECT farming_type, COUNT(*) FROM farmers GROUP BY farming_type"
-        ).fetchall())
+        counts_by_type = {
+            row["farming_type"]: row["count"] for row in connection.execute(
+                "SELECT farming_type, COUNT(*) AS count FROM farmers GROUP BY farming_type"
+            ).fetchall()
+        }
 
     total_farmers = sum(counts_by_type.values())
     return render_template(
@@ -563,7 +575,7 @@ def export_farmers():
             search_pattern = f"%{search_text}%"
             saved_farmers = connection.execute(
                 """SELECT full_name, location, farming_type FROM farmers
-                   WHERE full_name LIKE ? OR location LIKE ? OR farming_type LIKE ?
+                   WHERE full_name LIKE %s OR location LIKE %s OR farming_type LIKE %s
                    ORDER BY id DESC""",
                 (search_pattern, search_pattern, search_pattern),
             ).fetchall()
@@ -577,8 +589,8 @@ def export_farmers():
     writer.writerow(["Full name", "Location", "Farming type"])
     for row in saved_farmers:
         safe_row = [
-            "'" + value if value.startswith(("=", "+", "-", "@", "\t", "\r")) else value
-            for value in row
+            "'" + value if isinstance(value, str) and value.startswith(("=", "+", "-", "@", "\t", "\r")) else value
+            for value in row.values()
         ]
         writer.writerow(safe_row)
 
@@ -630,15 +642,15 @@ def edit_farmer(farmer_id):
         with database_connection() as connection:
             if new_password:
                 connection.execute(
-                    """UPDATE farmers SET full_name = ?, phone = ?, location = ?,
-                       farming_type = ?, password_hash = ? WHERE id = ?""",
+                    """UPDATE farmers SET full_name = %s, phone = %s, location = %s,
+                       farming_type = %s, password_hash = %s WHERE id = %s""",
                     (full_name, phone, location, farming_type,
                      generate_password_hash(new_password), farmer_id),
                 )
             else:
                 connection.execute(
-                    """UPDATE farmers SET full_name = ?, phone = ?, location = ?,
-                       farming_type = ? WHERE id = ?""",
+                    """UPDATE farmers SET full_name = %s, phone = %s, location = %s,
+                       farming_type = %s WHERE id = %s""",
                     (full_name, phone, location, farming_type, farmer_id),
                 )
 
@@ -651,7 +663,7 @@ def edit_farmer(farmer_id):
 @login_required
 def delete_farmer(farmer_id):
     with database_connection() as connection:
-        connection.execute("DELETE FROM farmers WHERE id = ?", (farmer_id,))
+        connection.execute("DELETE FROM farmers WHERE id = %s", (farmer_id,))
     return redirect(url_for("farmers", deleted="yes"))
 
 
