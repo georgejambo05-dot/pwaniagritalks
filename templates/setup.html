@@ -16,6 +16,8 @@
             {% if error %}<p class="form-error" role="alert">{{ error }}</p>{% endif %}
             <form method="post">
                 <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                <label for="setup_token">One-time setup token</label>
+                <input type="password" id="setup_token" name="setup_token" autocomplete="off" required>
                 <label for="username">Username</label>
                 <input type="text" id="username" name="username" minlength="3" autocomplete="username" required>
                 <label for="password">Password</label>
