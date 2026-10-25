@@ -2,27 +2,108 @@ import csv
 import io
 import os
 import secrets
-import sqlite3
 from contextlib import contextmanager
 from pathlib import Path
 
 from functools import wraps
 
 from flask import Flask, Response, abort, redirect, render_template, request, send_from_directory, session, url_for
+from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import inspect, text
 from werkzeug.security import check_password_hash, generate_password_hash
 
 app = Flask(__name__)
 DATABASE = Path(__file__).with_name("farmers.db")
 
 
+def normalize_database_url(database_url):
+    """Normalize Neon and legacy PostgreSQL URLs for the psycopg 3 driver."""
+    if database_url.startswith("postgres://"):
+        return "postgresql+psycopg://" + database_url[len("postgres://"):]
+    if database_url.startswith("postgresql://"):
+        return "postgresql+psycopg://" + database_url[len("postgresql://"):]
+    return database_url
+
+
+database_url = os.environ.get("DATABASE_URL")
+if not database_url:
+    if os.environ.get("RENDER"):
+        raise RuntimeError("Set DATABASE_URL to the Neon PostgreSQL connection string in the hosting service environment.")
+    database_url = f"sqlite:///{DATABASE}"
+
+app.config["SQLALCHEMY_DATABASE_URI"] = normalize_database_url(database_url)
+app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {"pool_pre_ping": True}
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+db = SQLAlchemy(app)
+
+
+class DatabaseRow:
+    """Small compatibility wrapper for the mapping and tuple access used by the app."""
+
+    def __init__(self, row):
+        self._row = row
+
+    def __getitem__(self, key):
+        if isinstance(key, (int, slice)):
+            return self._row[key]
+        return self._row._mapping[key]
+
+    def __iter__(self):
+        return iter(self._row)
+
+    def __len__(self):
+        return len(self._row)
+
+    def keys(self):
+        return self._row._mapping.keys()
+
+
+class DatabaseResult:
+    def __init__(self, result):
+        self._result = result
+
+    def fetchone(self):
+        row = self._result.fetchone()
+        return DatabaseRow(row) if row is not None else None
+
+    def fetchall(self):
+        return [DatabaseRow(row) for row in self._result.fetchall()]
+
+    def __iter__(self):
+        for row in self._result:
+            yield DatabaseRow(row)
+
+
+class DatabaseConnection:
+    def __init__(self, connection):
+        self._connection = connection
+
+    @property
+    def closed(self):
+        return self._connection.closed
+
+    def execute(self, statement, parameters=()):
+        if isinstance(parameters, dict):
+            return DatabaseResult(self._connection.execute(text(statement), parameters))
+        values = tuple(parameters or ())
+        parts = statement.split("?")
+        if len(parts) - 1 != len(values):
+            raise ValueError("The SQL placeholder count does not match the parameters.")
+        named_statement = parts[0]
+        bindings = {}
+        for index, value in enumerate(values):
+            key = f"p{index}"
+            named_statement += f":{key}" + parts[index + 1]
+            bindings[key] = value
+        result = self._connection.execute(text(named_statement), bindings)
+        return DatabaseResult(result)
+
+
 @contextmanager
 def database_connection():
-    connection = sqlite3.connect(DATABASE)
-    try:
-        with connection:
-            yield connection
-    finally:
-        connection.close()
+    with app.app_context():
+        with db.engine.begin() as connection:
+            yield DatabaseConnection(connection)
 
 
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'change-this-to-a-random-secret-string')
@@ -72,49 +153,60 @@ def check_post_token():
             abort(400)
 
 
+class Farmer(db.Model):
+    __tablename__ = "farmers"
+
+    id = db.Column(db.Integer, primary_key=True)
+    full_name = db.Column(db.Text, nullable=False)
+    phone = db.Column(db.Text, nullable=False)
+    location = db.Column(db.Text, nullable=False)
+    farming_type = db.Column(db.Text, nullable=False)
+    password_hash = db.Column(db.Text)
+
+
+class AdminUser(db.Model):
+    __tablename__ = "admin_users"
+
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(255), nullable=False, unique=True)
+    password_hash = db.Column(db.Text, nullable=False)
+
+
+class FarmerQuestion(db.Model):
+    __tablename__ = "farmer_questions"
+
+    id = db.Column(db.Integer, primary_key=True)
+    farmer_id = db.Column(db.Integer, db.ForeignKey("farmers.id", ondelete="CASCADE"), nullable=False)
+    question_text = db.Column(db.Text, nullable=False)
+    created_at = db.Column(db.DateTime(timezone=True), nullable=False, server_default=text("CURRENT_TIMESTAMP"))
+    status = db.Column(db.Text, nullable=False, server_default=text("'Waiting for a response'"))
+    answer = db.Column(db.Text)
+    answered_at = db.Column(db.DateTime(timezone=True))
+    photo_filename = db.Column(db.Text)
+
+
 def create_database():
-    """Create the tables and add the password column to older farmer databases."""
-    with database_connection() as connection:
-        connection.execute("""
-            CREATE TABLE IF NOT EXISTS farmers (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                full_name TEXT NOT NULL,
-                phone TEXT NOT NULL,
-                location TEXT NOT NULL,
-                farming_type TEXT NOT NULL,
-                password_hash TEXT
-            )
-        """)
-        columns = {
-            row[1] for row in connection.execute("PRAGMA table_info(farmers)").fetchall()
-        }
-        if "password_hash" not in columns:
-            connection.execute("ALTER TABLE farmers ADD COLUMN password_hash TEXT")
-        connection.execute("""
-            CREATE TABLE IF NOT EXISTS admin_users (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                username TEXT NOT NULL UNIQUE,
-                password_hash TEXT NOT NULL
-            )
-        """)
-        connection.execute("""
-            CREATE TABLE IF NOT EXISTS farmer_questions (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                farmer_id INTEGER NOT NULL,
-                question_text TEXT NOT NULL,
-                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                status TEXT NOT NULL DEFAULT 'Waiting for a response'
-            )
-        """)
-        question_columns = {
-            row[1] for row in connection.execute("PRAGMA table_info(farmer_questions)").fetchall()
-        }
-        if "answer" not in question_columns:
-            connection.execute("ALTER TABLE farmer_questions ADD COLUMN answer TEXT")
-        if "answered_at" not in question_columns:
-            connection.execute("ALTER TABLE farmer_questions ADD COLUMN answered_at TEXT")
-        if "photo_filename" not in question_columns:
-            connection.execute("ALTER TABLE farmer_questions ADD COLUMN photo_filename TEXT")
+    """Create the schema and preserve the existing local SQLite development database."""
+    with app.app_context():
+        db.create_all()
+        if db.engine.dialect.name == "sqlite":
+            legacy_columns = {
+                "farmers": {"password_hash": "TEXT"},
+                "farmer_questions": {
+                    "answer": "TEXT",
+                    "answered_at": "TEXT",
+                    "photo_filename": "TEXT",
+                },
+            }
+            inspector = inspect(db.engine)
+            with db.engine.begin() as connection:
+                for table_name, additions in legacy_columns.items():
+                    existing = {column["name"] for column in inspector.get_columns(table_name)}
+                    for column_name, column_type in additions.items():
+                        if column_name not in existing:
+                            connection.execute(text(
+                                f"ALTER TABLE {table_name} ADD COLUMN {column_name} {column_type}"
+                            ))
 
 
 def admin_exists():
@@ -143,7 +235,6 @@ def farmer_login_required(view):
 def get_farmer(farmer_id):
     """Find one farmer by ID, or return None if it does not exist."""
     with database_connection() as connection:
-        connection.row_factory = sqlite3.Row
         return connection.execute(
             "SELECT * FROM farmers WHERE id = ?", (farmer_id,)
         ).fetchone()
@@ -223,7 +314,7 @@ def farmer_login():
         with database_connection() as connection:
             matching_farmers = connection.execute(
                 """SELECT id, password_hash FROM farmers
-                   WHERE full_name = ? COLLATE NOCASE AND password_hash IS NOT NULL""",
+                   WHERE LOWER(full_name) = LOWER(?) AND password_hash IS NOT NULL""",
                 (full_name,),
             ).fetchall()
 
@@ -381,7 +472,6 @@ def farmer_questions():
             return redirect(url_for("farmer_questions", sent="yes"))
 
     with database_connection() as connection:
-        connection.row_factory = sqlite3.Row
         my_questions = connection.execute(
             """SELECT id, question_text, created_at, status, answer, answered_at, photo_filename FROM farmer_questions
                WHERE farmer_id = ? ORDER BY id DESC""",
@@ -397,7 +487,6 @@ def farmer_questions():
 @app.route("/question-photo/<int:question_id>")
 def question_photo(question_id):
     with database_connection() as connection:
-        connection.row_factory = sqlite3.Row
         question = connection.execute(
             "SELECT farmer_id, photo_filename FROM farmer_questions WHERE id = ?",
             (question_id,),
@@ -419,7 +508,6 @@ def question_photo(question_id):
 @login_required
 def admin_questions():
     with database_connection() as connection:
-        connection.row_factory = sqlite3.Row
         questions = connection.execute(
             """SELECT farmer_questions.id, farmer_questions.question_text,
                       farmer_questions.created_at, farmer_questions.status,
@@ -461,24 +549,31 @@ def reply_to_question(question_id):
 
 @app.route("/setup", methods=["GET", "POST"])
 def setup():
-    if request.remote_addr not in {"127.0.0.1", "::1"}:
+    setup_token = os.environ.get("ADMIN_SETUP_TOKEN", "")
+    setup_token_required = bool(setup_token)
+    is_local = request.remote_addr in {"127.0.0.1", "::1"}
+    if not is_local and not setup_token_required:
         abort(403)
     if admin_exists():
         return redirect(url_for("login"))
 
     error = None
     if request.method == "POST":
+        if setup_token_required and not secrets.compare_digest(
+            request.form.get("setup_token", ""), setup_token
+        ):
+            error = "The one-time setup token is incorrect."
         username = request.form.get("username", "").strip()
         password = request.form.get("password", "")
         confirmation = request.form.get("confirmation", "")
 
-        if len(username) < 3:
+        if error is None and len(username) < 3:
             error = "Choose a username with at least 3 characters."
-        elif len(password) < 12:
+        elif error is None and len(password) < 12:
             error = "Choose a password with at least 12 characters."
-        elif password != confirmation:
+        elif error is None and password != confirmation:
             error = "The two password entries do not match."
-        else:
+        elif error is None:
             with database_connection() as connection:
                 connection.execute(
                     "INSERT INTO admin_users (username, password_hash) VALUES (?, ?)",
@@ -486,13 +581,15 @@ def setup():
                 )
             return redirect(url_for("login", created="yes"))
 
-    return render_template("setup.html", error=error)
+    return render_template(
+        "setup.html", error=error, setup_token_required=setup_token_required
+    )
 
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if not admin_exists():
-        if request.remote_addr in {"127.0.0.1", "::1"}:
+        if request.remote_addr in {"127.0.0.1", "::1"} or os.environ.get("ADMIN_SETUP_TOKEN"):
             return redirect(url_for("setup"))
         abort(403)
 
@@ -528,12 +625,11 @@ def logout():
 def farmers():
     search_text = request.args.get("q", "").strip()
     with database_connection() as connection:
-        connection.row_factory = sqlite3.Row
         if search_text:
             search_pattern = f"%{search_text}%"
             saved_farmers = connection.execute(
                 """SELECT id, full_name, location, farming_type FROM farmers
-                   WHERE full_name LIKE ? OR location LIKE ? OR farming_type LIKE ?
+                   WHERE LOWER(full_name) LIKE LOWER(?) OR LOWER(location) LIKE LOWER(?) OR LOWER(farming_type) LIKE LOWER(?)
                    ORDER BY id DESC""",
                 (search_pattern, search_pattern, search_pattern),
             ).fetchall()
@@ -563,7 +659,7 @@ def export_farmers():
             search_pattern = f"%{search_text}%"
             saved_farmers = connection.execute(
                 """SELECT full_name, location, farming_type FROM farmers
-                   WHERE full_name LIKE ? OR location LIKE ? OR farming_type LIKE ?
+                   WHERE LOWER(full_name) LIKE LOWER(?) OR LOWER(location) LIKE LOWER(?) OR LOWER(farming_type) LIKE LOWER(?)
                    ORDER BY id DESC""",
                 (search_pattern, search_pattern, search_pattern),
             ).fetchall()
