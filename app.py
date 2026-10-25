@@ -105,7 +105,7 @@ def create_database():
         connection.execute("""
             CREATE TABLE IF NOT EXISTS farmer_questions (
                 id BIGSERIAL PRIMARY KEY,
-                farmer_id INTEGER NOT NULL,
+                farmer_id BIGINT NOT NULL,
                 question_text TEXT NOT NULL,
                 created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 status TEXT NOT NULL DEFAULT 'Waiting for a response'
@@ -466,13 +466,19 @@ def reply_to_question(question_id):
 
 @app.route("/setup", methods=["GET", "POST"])
 def setup():
-    if request.remote_addr not in {"127.0.0.1", "::1"}:
+    # Remote setup is permitted only when a private, one-time environment token is configured.
+    setup_token = os.environ.get("ADMIN_SETUP_TOKEN", "")
+    if not setup_token:
         abort(403)
     if admin_exists():
         return redirect(url_for("login"))
 
     error = None
     if request.method == "POST":
+        submitted_token = request.form.get("setup_token", "")
+        if not secrets.compare_digest(submitted_token, setup_token):
+            abort(403)
+
         username = request.form.get("username", "").strip()
         password = request.form.get("password", "")
         confirmation = request.form.get("confirmation", "")
@@ -497,7 +503,7 @@ def setup():
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if not admin_exists():
-        if request.remote_addr in {"127.0.0.1", "::1"}:
+        if os.environ.get("ADMIN_SETUP_TOKEN"):
             return redirect(url_for("setup"))
         abort(403)
 
