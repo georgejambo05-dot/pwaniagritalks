@@ -8,11 +8,16 @@
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='pwaniagritalks-brand-logo.png') }}?v=3">
 </head>
 <body>
-    <header><h1 class="site-logo-heading"><a href="{{ url_for('home') }}" aria-label="PWANIAGRITALKS home"><img class="site-logo" src="{{ url_for('static', filename='pwaniagritalks-brand-logo.jpg') }}?v=3" alt="PWANIAGRITALKS — Growing the Coast Through Agriculture"></a></h1><p>One-time administrator setup</p></header>
+    <header><h1 class="site-logo-heading"><a href="{{ url_for('home') }}" aria-label="PWANIAGRITALKS home"><img class="site-logo" src="{{ url_for('static', filename='pwaniagritalks-brand-logo.jpg') }}?v=3" alt="PWANIAGRITALKS â Growing the Coast Through Agriculture"></a></h1><p>One-time administrator setup</p></header>
     <main>
         <section>
             <h2>Create the First Admin Account</h2>
             <p>Choose a username and a password with at least 12 characters.</p>
+            {% if setup_token_required %}
+            <p>Enter the one-time token configured for this deployment. Remove that token from the hosting environment after creating the admin account.</p>
+            <label for="setup_token">One-time setup token</label>
+            <input type="password" id="setup_token" name="setup_token" autocomplete="off" required>
+            {% endif %}
             {% if error %}<p class="form-error" role="alert">{{ error }}</p>{% endif %}
             <form method="post">
                 <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
