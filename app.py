@@ -669,55 +669,8 @@ def delete_farmer(farmer_id):
 
 create_database()
 
-@app.route("/create-first-admin")
-def create_first_admin():
-    setup_token = os.environ.get("ADMIN_SETUP_TOKEN")
-    supplied_token = request.args.get("token", "")
-
-    if not setup_token or not secrets.compare_digest(
-        supplied_token, setup_token
-    ):
-        abort(403)
-
-    existing = User.query.filter_by(username="admin").first()
-    if existing:
-        return "Admin account already exists.", 409
-
-    password = os.environ.get("ADMIN_INITIAL_PASSWORD")
-    if not password or len(password) < 12:
-        return "Configure ADMIN_INITIAL_PASSWORD in Render.", 500
-
-    admin = User(
-        username="admin",
-        password_hash=generate_password_hash(password),
-        is_admin=True
-    )
-    db.session.add(admin)
-    db.session.commit()
-
-    return "Admin account created successfully."
-    
-with app.app_context():
-    db.create_all()
-    print("Database tables created!")
-
-
-with app.app_context():
-    db.create_all()
-    print("Database tables created!")
-
 
 if __name__ == "__main__":
     app.run(debug=True)
     
     
-
-
-
-
-
-
-
-
-
-
