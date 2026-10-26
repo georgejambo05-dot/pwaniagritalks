@@ -8,3 +8,7 @@ services:
     envVars:
       - key: SECRET_KEY
         generateValue: true
+      - key: DATABASE_URL
+        sync: false
+      - key: ADMIN_SETUP_TOKEN
+        sync: false
