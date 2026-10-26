@@ -697,12 +697,18 @@ def create_first_admin():
 
     return "Admin account created successfully."
     
-if __name__ == "__main__":
-    app.run(debug=True)
-    with app.app_context():
+with app.app_context():
     db.create_all()
     print("Database tables created!")
-    
+
+
+with app.app_context():
+    db.create_all()
+    print("Database tables created!")
+
+
+if __name__ == "__main__":
+    app.run(debug=True)
     
     
 
