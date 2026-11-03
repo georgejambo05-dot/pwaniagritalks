@@ -160,8 +160,24 @@ def home():
     if request.method == "POST":
         full_name = request.form.get("full_name", "").strip()
         phone = request.form.get("phone", "").strip()
-        location = request.form.get("location", "").strip()
+        county = request.form.get("county", "").strip()
+        local_area = request.form.get("local_area", "").strip()
+        allowed_counties = {
+            "Mombasa", "Kwale", "Kilifi", "Tana River", "Lamu", "Taita-Taveta",
+            "Garissa", "Wajir", "Mandera", "Marsabit", "Isiolo", "Meru",
+            "Tharaka-Nithi", "Embu", "Kitui", "Machakos", "Makueni", "Nyandarua",
+            "Nyeri", "Kirinyaga", "Murang'a", "Kiambu", "Turkana", "West Pokot",
+            "Samburu", "Trans Nzoia", "Uasin Gishu", "Elgeyo-Marakwet", "Nandi",
+            "Baringo", "Laikipia", "Nakuru", "Narok", "Kajiado", "Kericho",
+            "Bomet", "Kakamega", "Vihiga", "Bungoma", "Busia", "Siaya",
+            "Kisumu", "Homa Bay", "Migori", "Kisii", "Nyamira", "Nairobi"
+        }
+        location = county + " County" + (" - " + local_area if local_area else "")
         farming_type = request.form.get("farming_type", "").strip()
+        if county not in allowed_counties:
+            return render_template(
+                "index.html", error="Please select your county from the list."
+            ), 400
         password = request.form.get("password", "")
         confirmation = request.form.get("confirmation", "")
 
