@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Weather &amp; Farming Forecast | PWANIAGRITALKS</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=14">
+<style>
+.weather-page{max-width:950px;margin:2rem auto;padding:0 1rem}.weather-form,.weather-panel,.forecast-day{background:#fff;border-radius:12px;padding:1.2rem;margin:1rem 0;box-shadow:0 2px 12px rgba(0,0,0,.08)}.weather-form label{display:block;margin-top:.8rem;font-weight:600}.weather-form select,.weather-form input{width:100%;padding:.8rem;margin-top:.3rem}.weather-form button{margin-top:1rem;padding:.8rem 1.2rem;cursor:pointer}.weather-current{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:.8rem}.weather-stat{background:#f1f7f1;padding:1rem;border-radius:10px}.weather-stat strong{display:block;font-size:1.35rem;margin-top:.3rem}.forecast-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:.8rem}.forecast-day{margin:0}.weather-error{color:#9b1c1c;background:#fff0f0;padding:.8rem;border-radius:8px}.weather-note{font-size:.9rem;color:#555}
+</style></head>
+<body>
+<header><h1><a href="{{ url_for('home') }}">PWANIAGRITALKS</a></h1><p>Weather information for better farming decisions</p></header>
+<nav class="home-nav"><div class="home-nav-primary"><a href="{{ url_for('home') }}">Home</a><a href="{{ url_for('weather') }}">Weather</a><a href="{{ url_for('home') }}#guides">Farming Guides</a></div><div class="home-nav-secondary"><a href="{{ url_for('farmer_login') }}">Farmer Login</a></div></nav>
+<main class="weather-page">
+<h2>Weather &amp; Farming Forecast</h2>
+<p>Check current weather and the next five days for your county or a nearby town. Local conditions can vary within a county.</p>
+<form class="weather-form" method="get" action="{{ url_for('weather') }}">
+<label for="county">Choose your county</label><select id="county" name="county" required><option value="">Select county</option>{% for item in counties %}<option value="{{ item }}" {% if county == item %}selected{% endif %}>{{ item }}</option>{% endfor %}</select>
+<label for="local_area">Nearest town or area (optional)</label><input id="local_area" name="local_area" value="{{ local_area }}" placeholder="e.g. Njoro, Kilifi Town, Chasimba">
+<button type="submit">Check weather</button></form>
+{% if error %}<p class="weather-error" role="alert">{{ error }}</p>{% endif %}
+{% if weather %}
+<section class="weather-panel"><h3>Current weather: {{ weather.place }}, {{ weather.county }} County</h3><p>{{ weather.condition }}</p>
+<div class="weather-current">
+<div class="weather-stat">Temperature<strong>{{ weather.current.temperature_2m }} °C</strong></div>
+<div class="weather-stat">Feels like<strong>{{ weather.current.apparent_temperature }} °C</strong></div>
+<div class="weather-stat">Humidity<strong>{{ weather.current.relative_humidity_2m }}%</strong></div>
+<div class="weather-stat">Rain now<strong>{{ weather.current.precipitation }} mm</strong></div>
+<div class="weather-stat">Wind speed<strong>{{ weather.current.wind_speed_10m }} km/h</strong></div>
+</div></section>
+<h3>Five-day forecast</h3><div class="forecast-list">{% for day in weather.days %}<article class="forecast-day"><h4>{{ day.date }}</h4><p>{{ day.condition }}</p><p>High: <strong>{{ day.high }} °C</strong></p><p>Low: <strong>{{ day.low }} °C</strong></p><p>Chance of rain: <strong>{{ day.rain_chance if day.rain_chance is not none else 'N/A' }}%</strong></p><p>Expected rain: <strong>{{ day.rain_total }} mm</strong></p></article>{% endfor %}</div>
+<p class="weather-note">Forecasts are estimates, not guarantees. Check local conditions before spraying, irrigating, planting, or harvesting.</p>{% endif %}
+<p class="weather-note">Weather data provided by <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a>.</p>
+</main><footer><p>PWANIAGRITALKS | Growing the Coast Through Agriculture</p></footer></body></html>
