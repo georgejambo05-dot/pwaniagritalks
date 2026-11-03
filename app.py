@@ -2,6 +2,9 @@ import csv
 import io
 import os
 import secrets
+import json
+from urllib.parse import urlencode
+from urllib.request import Request, urlopen
 import psycopg
 from psycopg.rows import dict_row
 from contextlib import contextmanager
@@ -209,6 +212,61 @@ def home():
 
     registered = request.args.get("registered") == "yes"
     return render_template("index.html", registered=registered)
+
+
+KENYAN_COUNTIES = ["Mombasa", "Kwale", "Kilifi", "Tana River", "Lamu", "Taita-Taveta", "Garissa", "Wajir", "Mandera", "Marsabit", "Isiolo", "Meru", "Tharaka-Nithi", "Embu", "Kitui", "Machakos", "Makueni", "Nyandarua", "Nyeri", "Kirinyaga", "Murang'a", "Kiambu", "Turkana", "West Pokot", "Samburu", "Trans Nzoia", "Uasin Gishu", "Elgeyo-Marakwet", "Nandi", "Baringo", "Laikipia", "Nakuru", "Narok", "Kajiado", "Kericho", "Bomet", "Kakamega", "Vihiga", "Bungoma", "Busia", "Siaya", "Kisumu", "Homa Bay", "Migori", "Kisii", "Nyamira", "Nairobi"]
+
+WEATHER_CODES = {0:"Clear sky",1:"Mainly clear",2:"Partly cloudy",3:"Overcast",45:"Fog",48:"Fog",51:"Light drizzle",53:"Moderate drizzle",55:"Dense drizzle",56:"Freezing drizzle",57:"Heavy freezing drizzle",61:"Slight rain",63:"Moderate rain",65:"Heavy rain",66:"Light freezing rain",67:"Heavy freezing rain",71:"Slight snow",73:"Moderate snow",75:"Heavy snow",77:"Snow grains",80:"Slight rain showers",81:"Moderate rain showers",82:"Heavy rain showers",85:"Snow showers",86:"Heavy snow showers",95:"Thunderstorm",96:"Thunderstorm with hail",99:"Thunderstorm with heavy hail"}
+
+def fetch_weather_json(url):
+    req = Request(url, headers={"User-Agent": "PwaniAgritalks/1.0"})
+    with urlopen(req, timeout=12) as response:
+        return json.loads(response.read().decode("utf-8"))
+
+
+@app.route("/weather")
+def weather():
+    county = request.args.get("county", "").strip()
+    local_area = request.args.get("local_area", "").strip()
+    weather_data = None
+    error = None
+    if county:
+        if county not in KENYAN_COUNTIES:
+            error = "Please select a valid Kenyan county."
+        else:
+            search_place = f"{local_area}, {county}, Kenya" if local_area else f"{county} County, Kenya"
+            try:
+                geocode_url = "https://geocoding-api.open-meteo.com/v1/search?" + urlencode({"name": search_place, "count": 1, "language": "en", "format": "json"})
+                places = fetch_weather_json(geocode_url).get("results", [])
+                if not places:
+                    error = "We could not find that area. Try a nearby town or leave the town field blank."
+                else:
+                    place = places[0]
+                    forecast_url = "https://api.open-meteo.com/v1/forecast?" + urlencode({
+                        "latitude": place["latitude"], "longitude": place["longitude"],
+                        "current": "temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,wind_speed_10m",
+                        "daily": "weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,precipitation_sum",
+                        "timezone": "Africa/Nairobi", "forecast_days": 5
+                    })
+                    forecast = fetch_weather_json(forecast_url)
+                    current, daily = forecast.get("current", {}), forecast.get("daily", {})
+                    weather_data = {
+                        "place": place.get("name", search_place), "county": county,
+                        "current": current,
+                        "condition": WEATHER_CODES.get(current.get("weather_code"), "Conditions unavailable"),
+                        "days": [{
+                            "date": daily["time"][n],
+                            "condition": WEATHER_CODES.get(daily["weather_code"][n], "Conditions unavailable"),
+                            "high": daily["temperature_2m_max"][n],
+                            "low": daily["temperature_2m_min"][n],
+                            "rain_chance": daily["precipitation_probability_max"][n],
+                            "rain_total": daily["precipitation_sum"][n]
+                        } for n in range(len(daily.get("time", [])))]
+                    }
+            except Exception:
+                error = "Weather information is temporarily unavailable. Please try again shortly."
+    return render_template("weather.html", counties=KENYAN_COUNTIES, county=county, local_area=local_area, weather=weather_data, error=error)
+
 
 @app.route("/maize-guide")
 def maize_guide():
