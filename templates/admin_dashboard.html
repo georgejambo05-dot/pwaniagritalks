@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard | PWANIAGRITALKS</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=13">
+</head>
+<body>
+    <header>
+        <h1 class="site-logo-heading"><a href="{{ url_for('home') }}"><img class="site-logo" src="{{ url_for('static', filename='pwaniagritalks-brand-logo.jpg') }}?v=3" alt="PWANIAGRITALKS"></a></h1>
+        <p>Administrator dashboard</p>
+    </header>
+    <nav>
+        <a href="{{ url_for('farmers') }}">Registered Farmers</a>
+        <a href="{{ url_for('admin_questions') }}">Farmer Questions</a>
+        <span>Signed in as {{ admin_username }}</span>
+        <form class="logout-form" method="post" action="{{ url_for('logout') }}">
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+            <button type="submit">Sign out</button>
+        </form>
+    </nav>
+    <main>
+        <section>
+            <h2>Welcome, {{ admin_username }}</h2>
+            <p>Here is an overview of farmer registrations and questions on PwaniAgritalks.</p>
+            <div class="summary-grid">
+                <article class="summary-card"><h3>{{ total_farmers }}</h3><p>Registered farmers</p></article>
+                <article class="summary-card"><h3>{{ total_questions }}</h3><p>Questions received</p></article>
+                <article class="summary-card"><h3>{{ unanswered_questions }}</h3><p>Questions awaiting a reply</p></article>
+                <article class="summary-card"><h3>{{ counts_by_type.get('crops', 0) }}</h3><p>Crop farmers</p></article>
+                <article class="summary-card"><h3>{{ counts_by_type.get('livestock', 0) }}</h3><p>Livestock farmers</p></article>
+                <article class="summary-card"><h3>{{ counts_by_type.get('mixed', 0) }}</h3><p>Mixed farming</p></article>
+            </div>
+            <p><a class="button-link" href="{{ url_for('farmers') }}">Manage registered farmers</a></p>
+            <p><a class="button-link" href="{{ url_for('admin_questions') }}">Open farmer questions</a></p>
+        </section>
+    </main>
+    <footer><p>PWANIAGRITALKS | Growing the Coast Through Agriculture</p></footer>
+</body>
+</html>
