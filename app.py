@@ -504,6 +504,50 @@ def setup():
 @app.route("/login", methods=["GET", "POST"])
 @app.route("/admin-login", methods=["GET", "POST"])
 def login():
+    @app.route("/admin-recover", methods=["GET", "POST"])
+def admin_recover():
+    setup_token = os.environ.get("ADMIN_SETUP_TOKEN", "")
+
+    if not setup_token:
+        abort(403)
+
+    error = None
+
+    if request.method == "POST":
+        submitted_token = request.form.get("recovery_token", "")
+        username = request.form.get("username", "").strip()
+        password = request.form.get("password", "")
+        confirmation = request.form.get("confirmation", "")
+
+        if not secrets.compare_digest(submitted_token, setup_token):
+            abort(403)
+
+        if len(username) < 3:
+            error = "Username must have at least 3 characters."
+        elif len(password) < 12:
+            error = "Password must have at least 12 characters."
+        elif password != confirmation:
+            error = "Passwords do not match."
+        else:
+            with database_connection() as connection:
+                result = connection.execute(
+                    """
+                    UPDATE admin_users
+                    SET username = %s, password_hash = %s
+                    WHERE id = (
+                        SELECT id FROM admin_users ORDER BY id LIMIT 1
+                    )
+                    RETURNING id
+                    """,
+                    (username, generate_password_hash(password))
+                ).fetchone()
+
+            if result:
+                return redirect(url_for("login"))
+
+            error = "No administrator account exists to recover."
+
+    return render_template("admin_recover.html", error=error)
     if not admin_exists():
         if os.environ.get("ADMIN_SETUP_TOKEN"):
             return redirect(url_for("setup"))
