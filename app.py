@@ -522,7 +522,7 @@ def login():
         if admin and check_password_hash(admin["password_hash"], password):
             session.clear()
             session["admin_username"] = admin["username"]
-            return redirect(url_for("farmers"))
+            return redirect(url_for("admin_dashboard"))
         error = "The username or password is incorrect."
 
     return render_template(
@@ -581,6 +581,35 @@ def logout():
     session.clear()
     return redirect(url_for("home"))
 
+
+
+@app.route("/admin-dashboard")
+@login_required
+def admin_dashboard():
+    with database_connection() as connection:
+        total_farmers = connection.execute(
+            "SELECT COUNT(*) AS count FROM farmers"
+        ).fetchone()["count"]
+        total_questions = connection.execute(
+            "SELECT COUNT(*) AS count FROM farmer_questions"
+        ).fetchone()["count"]
+        unanswered_questions = connection.execute(
+            "SELECT COUNT(*) AS count FROM farmer_questions WHERE answer IS NULL OR TRIM(answer) = ''"
+        ).fetchone()["count"]
+        counts_by_type = {
+            row["farming_type"]: row["count"]
+            for row in connection.execute(
+                "SELECT farming_type, COUNT(*) AS count FROM farmers GROUP BY farming_type"
+            ).fetchall()
+        }
+    return render_template(
+        "admin_dashboard.html",
+        admin_username=session["admin_username"],
+        total_farmers=total_farmers,
+        total_questions=total_questions,
+        unanswered_questions=unanswered_questions,
+        counts_by_type=counts_by_type,
+    )
 
 @app.route("/farmers")
 @login_required
