@@ -504,7 +504,33 @@ def setup():
 @app.route("/login", methods=["GET", "POST"])
 @app.route("/admin-login", methods=["GET", "POST"])
 def login():
-    @app.route("/admin-recover", methods=["GET", "POST"])
+    if not admin_exists():
+        if os.environ.get("ADMIN_SETUP_TOKEN"):
+            return redirect(url_for("setup"))
+        abort(403)
+
+    error = None
+    if request.method == "POST":
+        username = request.form.get("username", "").strip()
+        password = request.form.get("password", "")
+        with database_connection() as connection:
+            admin = connection.execute(
+                "SELECT username, password_hash FROM admin_users WHERE username = %s",
+                (username,),
+            ).fetchone()
+
+        if admin and check_password_hash(admin["password_hash"], password):
+            session.clear()
+            session["admin_username"] = admin["username"]
+            return redirect(url_for("farmers"))
+        error = "The username or password is incorrect."
+
+    return render_template(
+        "login.html", error=error, created=request.args.get("created") == "yes"
+    )
+
+
+@app.route("/admin-recover", methods=["GET", "POST"])
 def admin_recover():
     setup_token = os.environ.get("ADMIN_SETUP_TOKEN", "")
 
@@ -539,7 +565,7 @@ def admin_recover():
                     )
                     RETURNING id
                     """,
-                    (username, generate_password_hash(password))
+                    (username, generate_password_hash(password)),
                 ).fetchone()
 
             if result:
@@ -548,30 +574,6 @@ def admin_recover():
             error = "No administrator account exists to recover."
 
     return render_template("admin_recover.html", error=error)
-    if not admin_exists():
-        if os.environ.get("ADMIN_SETUP_TOKEN"):
-            return redirect(url_for("setup"))
-        abort(403)
-
-    error = None
-    if request.method == "POST":
-        username = request.form.get("username", "").strip()
-        password = request.form.get("password", "")
-        with database_connection() as connection:
-            admin = connection.execute(
-                "SELECT username, password_hash FROM admin_users WHERE username = %s",
-                (username,),
-            ).fetchone()
-
-        if admin and check_password_hash(admin["password_hash"], password):
-            session.clear()
-            session["admin_username"] = admin["username"]
-            return redirect(url_for("farmers"))
-        error = "The username or password is incorrect."
-
-    return render_template(
-        "login.html", error=error, created=request.args.get("created") == "yes"
-    )
 
 
 @app.route("/logout", methods=["POST"])
