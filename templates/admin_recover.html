@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Admin Password Recovery</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body>
+    <h2>Recover Admin Account</h2>
+
+    {% if error %}
+        <p style="color:red;">{{ error }}</p>
+    {% endif %}
+
+    <form method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+        <label>Recovery Token</label><br>
+        <input type="password" name="recovery_token" required><br><br>
+
+        <label>New Username</label><br>
+        <input type="text" name="username" required><br><br>
+
+        <label>New Password</label><br>
+        <input type="password" name="password" minlength="12" required><br><br>
+
+        <label>Confirm New Password</label><br>
+        <input type="password" name="confirmation" minlength="12" required><br><br>
+
+        <button type="submit">Recover Admin Account</button>
+    </form>
+</body>
+</html>
