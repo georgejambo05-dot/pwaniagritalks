@@ -77,8 +77,29 @@
                 <input type="text" id="full_name" name="full_name" placeholder="e.g. Amina Ali" autocomplete="name" required>
                 <label for="phone">Phone number</label>
                 <input type="tel" id="phone" name="phone" placeholder="e.g. 0712 345 678" minlength="7" maxlength="20" pattern="[0-9+() -]{7,20}" title="Use 7 to 20 digits, spaces, plus signs, or parentheses" required>
-                <label for="location">County or location</label>
-                <input type="text" id="location" name="location" placeholder="e.g. Kilifi County" required>
+                <label for="county">County</label>
+                <select id="county" name="county" required>
+                    <option value="" disabled selected>Select your county</option>
+                    <optgroup label="Coastal counties">
+                        <option value="Mombasa">Mombasa</option><option value="Kwale">Kwale</option>
+                        <option value="Kilifi">Kilifi</option><option value="Tana River">Tana River</option>
+                        <option value="Lamu">Lamu</option><option value="Taita-Taveta">Taita-Taveta</option>
+                    </optgroup>
+                    <optgroup label="Other counties in Kenya">
+                        <option>Garissa</option><option>Wajir</option><option>Mandera</option><option>Marsabit</option>
+                        <option>Isiolo</option><option>Meru</option><option>Tharaka-Nithi</option><option>Embu</option>
+                        <option>Kitui</option><option>Machakos</option><option>Makueni</option><option>Nyandarua</option>
+                        <option>Nyeri</option><option>Kirinyaga</option><option>Murang'a</option><option>Kiambu</option>
+                        <option>Turkana</option><option>West Pokot</option><option>Samburu</option><option>Trans Nzoia</option>
+                        <option>Uasin Gishu</option><option>Elgeyo-Marakwet</option><option>Nandi</option><option>Baringo</option>
+                        <option>Laikipia</option><option>Nakuru</option><option>Narok</option><option>Kajiado</option>
+                        <option>Kericho</option><option>Bomet</option><option>Kakamega</option><option>Vihiga</option>
+                        <option>Bungoma</option><option>Busia</option><option>Siaya</option><option>Kisumu</option>
+                        <option>Homa Bay</option><option>Migori</option><option>Kisii</option><option>Nyamira</option><option>Nairobi</option>
+                    </optgroup>
+                </select>
+                <label for="local_area">Town, sub-county, or village (optional)</label>
+                <input type="text" id="local_area" name="local_area" placeholder="e.g. Chasimba, Njoro, or Nakuru Town">
                 <label for="farming_type">What do you farm?</label>
                 <select id="farming_type" name="farming_type" required>
                     <option value="" disabled selected>Select a farming type</option>
