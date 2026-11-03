@@ -465,6 +465,7 @@ def reply_to_question(question_id):
     return redirect(url_for("admin_questions", replied="yes"))
 
 @app.route("/setup", methods=["GET", "POST"])
+@app.route("/create-first-admin", methods=["GET", "POST"])
 def setup():
     # Remote setup is permitted only when a private, one-time environment token is configured.
     setup_token = os.environ.get("ADMIN_SETUP_TOKEN", "")
@@ -501,6 +502,7 @@ def setup():
 
 
 @app.route("/login", methods=["GET", "POST"])
+@app.route("/admin-login", methods=["GET", "POST"])
 def login():
     if not admin_exists():
         if os.environ.get("ADMIN_SETUP_TOKEN"):
@@ -672,19 +674,3 @@ create_database()
 
 if __name__ == "__main__":
     app.run(debug=True)
-    @app.route("/create-admin")
-def create_admin():
-    from werkzeug.security import generate_password_hash
-    admin = admin_users.query.filter_by(username='george').first()
-    if not admin:
-        new_admin = admin_users(
-            username='george',
-            password_hash=generate_password_hash('GEORGE@2004GE')
-        )
-        db.session.add(new_admin)
-        db.session.commit()
-        return "✅ Admin created! Go login now, then DELETE this route!"
-    return "⚠️ Admin already exists — try logging in"
-    
-    
-    
