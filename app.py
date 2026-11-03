@@ -672,5 +672,18 @@ create_database()
 
 if __name__ == "__main__":
     app.run(debug=True)
+    @app.route("/create-admin")
+def create_admin():
+    from werkzeug.security import generate_password_hash
+    admin = admin_users.query.filter_by(username='george').first()
+    if not admin:
+        new_admin = admin_users(
+            username='george',
+            password_hash=generate_password_hash('GEORGE@2004GE')
+        )
+        db.session.add(new_admin)
+        db.session.commit()
+        return "✅ Admin created! Go login now, then DELETE this route!"
+    return "⚠️ Admin already exists — try logging in"
     
     
