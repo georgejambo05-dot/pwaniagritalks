@@ -219,9 +219,17 @@ KENYAN_COUNTIES = ["Mombasa", "Kwale", "Kilifi", "Tana River", "Lamu", "Taita-Ta
 WEATHER_CODES = {0:"Clear sky",1:"Mainly clear",2:"Partly cloudy",3:"Overcast",45:"Fog",48:"Fog",51:"Light drizzle",53:"Moderate drizzle",55:"Dense drizzle",56:"Freezing drizzle",57:"Heavy freezing drizzle",61:"Slight rain",63:"Moderate rain",65:"Heavy rain",66:"Light freezing rain",67:"Heavy freezing rain",71:"Slight snow",73:"Moderate snow",75:"Heavy snow",77:"Snow grains",80:"Slight rain showers",81:"Moderate rain showers",82:"Heavy rain showers",85:"Snow showers",86:"Heavy snow showers",95:"Thunderstorm",96:"Thunderstorm with hail",99:"Thunderstorm with heavy hail"}
 
 def fetch_weather_json(url):
+    """Fetch JSON from Open-Meteo and reject unsuccessful or invalid responses."""
     req = Request(url, headers={"User-Agent": "PwaniAgritalks/1.0"})
-    with urlopen(req, timeout=12) as response:
-        return json.loads(response.read().decode("utf-8"))
+    with urlopen(req, timeout=20) as response:
+        payload = json.loads(response.read().decode("utf-8"))
+    if not isinstance(payload, dict) or payload.get("error"):
+        raise ValueError("The weather provider returned an invalid response.")
+    return payload
+
+
+def normalise_place_text(value):
+    return " ".join(str(value or "").casefold().replace("-", " ").split())
 
 
 @app.route("/weather")
@@ -230,18 +238,41 @@ def weather():
     local_area = request.args.get("local_area", "").strip()
     weather_data = None
     error = None
+
     if county:
         if county not in KENYAN_COUNTIES:
             error = "Please select a valid Kenyan county."
         else:
-            search_place = f"{local_area}, {county}, Kenya" if local_area else f"{county} County, Kenya"
+            search_name = local_area or county
             try:
-                geocode_url = "https://geocoding-api.open-meteo.com/v1/search?" + urlencode({"name": search_place, "count": 1, "language": "en", "format": "json"})
-                places = fetch_weather_json(geocode_url).get("results", [])
+                geocode_url = "https://geocoding-api.open-meteo.com/v1/search?" + urlencode({
+                    "name": search_name, "count": 20, "language": "en",
+                    "format": "json", "countryCode": "KE"
+                })
+                places = fetch_weather_json(geocode_url).get("results") or []
+
+                if not places and local_area:
+                    fallback_url = "https://geocoding-api.open-meteo.com/v1/search?" + urlencode({
+                        "name": county, "count": 20, "language": "en",
+                        "format": "json", "countryCode": "KE"
+                    })
+                    places = fetch_weather_json(fallback_url).get("results") or []
+
                 if not places:
                     error = "We could not find that area. Try a nearby town or leave the town field blank."
                 else:
-                    place = places[0]
+                    county_key = normalise_place_text(county)
+
+                    def county_match(place):
+                        admin_names = [place.get("admin1"), place.get("admin2"),
+                                       place.get("admin3"), place.get("admin4")]
+                        return any(
+                            county_key in normalise_place_text(name)
+                            or normalise_place_text(name) in county_key
+                            for name in admin_names if name
+                        )
+
+                    place = next((item for item in places if county_match(item)), places[0])
                     forecast_url = "https://api.open-meteo.com/v1/forecast?" + urlencode({
                         "latitude": place["latitude"], "longitude": place["longitude"],
                         "current": "temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,wind_speed_10m",
@@ -249,23 +280,36 @@ def weather():
                         "timezone": "Africa/Nairobi", "forecast_days": 5
                     })
                     forecast = fetch_weather_json(forecast_url)
-                    current, daily = forecast.get("current", {}), forecast.get("daily", {})
-                    weather_data = {
-                        "place": place.get("name", search_place), "county": county,
-                        "current": current,
-                        "condition": WEATHER_CODES.get(current.get("weather_code"), "Conditions unavailable"),
-                        "days": [{
-                            "date": daily["time"][n],
+                    current, daily = forecast.get("current") or {}, forecast.get("daily") or {}
+                    required = ("time", "weather_code", "temperature_2m_max",
+                                "temperature_2m_min", "precipitation_sum")
+                    if not current or any(key not in daily for key in required):
+                        raise ValueError("The weather provider returned incomplete forecast data.")
+
+                    days = []
+                    for n, date_value in enumerate(daily["time"]):
+                        rain_chances = daily.get("precipitation_probability_max") or []
+                        days.append({
+                            "date": date_value,
                             "condition": WEATHER_CODES.get(daily["weather_code"][n], "Conditions unavailable"),
                             "high": daily["temperature_2m_max"][n],
                             "low": daily["temperature_2m_min"][n],
-                            "rain_chance": daily["precipitation_probability_max"][n],
+                            "rain_chance": rain_chances[n] if n < len(rain_chances) else None,
                             "rain_total": daily["precipitation_sum"][n]
-                        } for n in range(len(daily.get("time", [])))]
+                        })
+
+                    weather_data = {
+                        "place": place.get("name", search_name), "county": county,
+                        "current": current,
+                        "condition": WEATHER_CODES.get(current.get("weather_code"), "Conditions unavailable"),
+                        "days": days
                     }
             except Exception:
+                app.logger.exception("Weather lookup failed for county=%s, area=%s", county, local_area)
                 error = "Weather information is temporarily unavailable. Please try again shortly."
-    return render_template("weather.html", counties=KENYAN_COUNTIES, county=county, local_area=local_area, weather=weather_data, error=error)
+
+    return render_template("weather.html", counties=KENYAN_COUNTIES, county=county,
+                           local_area=local_area, weather=weather_data, error=error)
 
 
 @app.route("/maize-guide")
