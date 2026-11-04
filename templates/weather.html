@@ -14,29 +14,11 @@
 <h2>Weather &amp; Farming Forecast</h2>
 <p>Check current weather and the upcoming forecast for your county or a nearby town. Local conditions can vary within a county.</p>
 <form class="weather-form" method="get" action="{{ url_for('weather') }}">
-<label for="county-search">Search for your county</label>
-<input id="county-search" type="search" placeholder="Type a county name..." autocomplete="off" aria-label="Search counties">
-<label for="county">Choose your county</label>
-<select id="county" name="county" required>
-<option value="">Select county</option>
-{% for item in counties %}<option value="{{ item }}" {% if county == item %}selected{% endif %}>{{ item }}</option>{% endfor %}
-</select>
-<script>
-document.addEventListener("DOMContentLoaded", function () {
-  const search = document.getElementById("county-search");
-  const select = document.getElementById("county");
-  const options = Array.from(select.options).slice(1);
-  search.addEventListener("input", function () {
-    const query = search.value.trim().toLocaleLowerCase();
-    options.forEach(function (option) {
-      option.hidden = query !== "" && !option.text.toLocaleLowerCase().includes(query);
-    });
-    if (select.selectedOptions.length && select.selectedOptions[0].hidden) {
-      select.value = "";
-    }
-  });
-});
-</script>
+<label for="county">Search your county</label>
+<input id="county" name="county" type="search" list="kenyan-counties" value="{{ county }}" placeholder="Type your county name..." autocomplete="off" required>
+<datalist id="kenyan-counties">
+{% for item in counties %}<option value="{{ item }}">{% endfor %}
+</datalist>
 <label for="local_area">Nearest town or area (optional)</label><input id="local_area" name="local_area" value="{{ local_area }}" placeholder="e.g. Njoro, Kilifi Town, Chasimba">
 <button type="submit">Check weather</button></form>
 {% if error %}<p class="weather-error" role="alert">{{ error }}</p>{% endif %}
