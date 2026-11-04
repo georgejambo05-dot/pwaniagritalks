@@ -12,7 +12,7 @@
 <nav class="home-nav"><div class="home-nav-primary"><a href="{{ url_for('home') }}">Home</a><a href="{{ url_for('weather') }}">Weather</a><a href="{{ url_for('home') }}#guides">Farming Guides</a></div><div class="home-nav-secondary"><a href="{{ url_for('farmer_login') }}">Farmer Login</a></div></nav>
 <main class="weather-page">
 <h2>Weather &amp; Farming Forecast</h2>
-<p>Check current weather and the next five days for your county or a nearby town. Local conditions can vary within a county.</p>
+<p>Check current weather and the upcoming forecast for your county or a nearby town. Local conditions can vary within a county.</p>
 <form class="weather-form" method="get" action="{{ url_for('weather') }}">
 <label for="county">Choose your county</label><select id="county" name="county" required><option value="">Select county</option>{% for item in counties %}<option value="{{ item }}" {% if county == item %}selected{% endif %}>{{ item }}</option>{% endfor %}</select>
 <label for="local_area">Nearest town or area (optional)</label><input id="local_area" name="local_area" value="{{ local_area }}" placeholder="e.g. Njoro, Kilifi Town, Chasimba">
@@ -27,7 +27,7 @@
 <div class="weather-stat">Rain now<strong>{{ weather.current.precipitation }} mm</strong></div>
 <div class="weather-stat">Wind speed<strong>{{ weather.current.wind_speed_10m }} km/h</strong></div>
 </div></section>
-<h3>Five-day forecast</h3><div class="forecast-list">{% for day in weather.days %}<article class="forecast-day"><h4>{{ day.date }}</h4><p>{{ day.condition }}</p><p>High: <strong>{{ day.high }} °C</strong></p><p>Low: <strong>{{ day.low }} °C</strong></p><p>Chance of rain: <strong>{{ day.rain_chance if day.rain_chance is not none else 'N/A' }}%</strong></p><p>Expected rain: <strong>{{ day.rain_total }} mm</strong></p></article>{% endfor %}</div>
+<h3>{{ weather.days|length }}-day forecast</h3><div class="forecast-list">{% for day in weather.days %}<article class="forecast-day"><h4>{{ day.date }}</h4><p>{{ day.condition }}</p><p>High: <strong>{{ day.high }} °C</strong></p><p>Low: <strong>{{ day.low }} °C</strong></p><p>Chance of rain: <strong>{{ day.rain_chance if day.rain_chance is not none else 'N/A' }}%</strong></p><p>Expected rain: <strong>{{ day.rain_total }} mm</strong></p></article>{% endfor %}</div>
 <p class="weather-note">Forecasts are estimates, not guarantees. Check local conditions before spraying, irrigating, planting, or harvesting.</p>{% endif %}
-<p class="weather-note">Weather data provided by <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a>.</p>
+<p class="weather-note">Weather data provided by Open-Meteo, with <a href="https://wttr.in/" target="_blank" rel="noopener">wttr.in</a> as a backup when the primary provider is unavailable.</p>
 </main><footer><p>PWANIAGRITALKS | Growing the Coast Through Agriculture</p></footer></body></html>
