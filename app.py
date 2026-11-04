@@ -5,6 +5,7 @@ import secrets
 import json
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
+from urllib.error import HTTPError
 import psycopg
 from psycopg.rows import dict_row
 from contextlib import contextmanager
@@ -232,6 +233,56 @@ def normalise_place_text(value):
     return " ".join(str(value or "").casefold().replace("-", " ").split())
 
 
+def fetch_wttr_weather(place):
+    """Backup weather provider used when Open-Meteo is temporarily rate-limited."""
+    location = f'{place["latitude"]},{place["longitude"]}'
+    backup_url = "https://wttr.in/" + location + "?" + urlencode({"format": "j1", "lang": "en", "m": ""})
+    data = fetch_weather_json(backup_url)
+    current_items = data.get("current_condition") or []
+    forecast_items = data.get("weather") or []
+    if not current_items or not forecast_items:
+        raise ValueError("Backup weather provider returned incomplete data.")
+
+    current_source = current_items[0]
+    description = (current_source.get("weatherDesc") or [{}])[0].get("value", "Conditions unavailable")
+    current = {
+        "temperature_2m": current_source.get("temp_C"),
+        "apparent_temperature": current_source.get("FeelsLikeC"),
+        "relative_humidity_2m": current_source.get("humidity"),
+        "precipitation": current_source.get("precipMM"),
+        "wind_speed_10m": current_source.get("windspeedKmph")
+    }
+
+    days = []
+    for item in forecast_items:
+        hourly = item.get("hourly") or []
+        day_description = "Conditions unavailable"
+        if hourly:
+            midday = hourly[min(4, len(hourly) - 1)]
+            day_description = (midday.get("weatherDesc") or [{}])[0].get("value", day_description)
+        rain_chances = [
+            int(hour.get("chanceofrain") or 0)
+            for hour in hourly if str(hour.get("chanceofrain") or "").isdigit()
+        ]
+        days.append({
+            "date": item.get("date", ""),
+            "condition": day_description,
+            "high": item.get("maxtempC"),
+            "low": item.get("mintempC"),
+            "rain_chance": max(rain_chances) if rain_chances else None,
+            "rain_total": item.get("totalPrecipMM", "0")
+        })
+
+    return {
+        "place": place.get("name", "Selected area"),
+        "county": "",
+        "current": current,
+        "condition": description,
+        "days": days,
+        "source": "wttr.in backup"
+    }
+
+
 @app.route("/weather")
 def weather():
     county = request.args.get("county", "").strip()
@@ -279,31 +330,41 @@ def weather():
                         "daily": "weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,precipitation_sum",
                         "timezone": "Africa/Nairobi", "forecast_days": 5
                     })
-                    forecast = fetch_weather_json(forecast_url)
-                    current, daily = forecast.get("current") or {}, forecast.get("daily") or {}
-                    required = ("time", "weather_code", "temperature_2m_max",
-                                "temperature_2m_min", "precipitation_sum")
-                    if not current or any(key not in daily for key in required):
-                        raise ValueError("The weather provider returned incomplete forecast data.")
+                    try:
+                        forecast = fetch_weather_json(forecast_url)
+                    except HTTPError as provider_error:
+                        if provider_error.code != 429:
+                            raise
+                        app.logger.warning("Open-Meteo rate limit reached; using wttr.in backup.")
+                        weather_data = fetch_wttr_weather(place)
+                        forecast = None
 
-                    days = []
-                    for n, date_value in enumerate(daily["time"]):
-                        rain_chances = daily.get("precipitation_probability_max") or []
-                        days.append({
-                            "date": date_value,
-                            "condition": WEATHER_CODES.get(daily["weather_code"][n], "Conditions unavailable"),
-                            "high": daily["temperature_2m_max"][n],
-                            "low": daily["temperature_2m_min"][n],
-                            "rain_chance": rain_chances[n] if n < len(rain_chances) else None,
-                            "rain_total": daily["precipitation_sum"][n]
-                        })
+                    if forecast is not None:
+                        current, daily = forecast.get("current") or {}, forecast.get("daily") or {}
+                        required = ("time", "weather_code", "temperature_2m_max",
+                                    "temperature_2m_min", "precipitation_sum")
+                        if not current or any(key not in daily for key in required):
+                            raise ValueError("The weather provider returned incomplete forecast data.")
 
-                    weather_data = {
-                        "place": place.get("name", search_name), "county": county,
-                        "current": current,
-                        "condition": WEATHER_CODES.get(current.get("weather_code"), "Conditions unavailable"),
-                        "days": days
-                    }
+                        days = []
+                        for n, date_value in enumerate(daily["time"]):
+                            rain_chances = daily.get("precipitation_probability_max") or []
+                            days.append({
+                                "date": date_value,
+                                "condition": WEATHER_CODES.get(daily["weather_code"][n], "Conditions unavailable"),
+                                "high": daily["temperature_2m_max"][n],
+                                "low": daily["temperature_2m_min"][n],
+                                "rain_chance": rain_chances[n] if n < len(rain_chances) else None,
+                                "rain_total": daily["precipitation_sum"][n]
+                            })
+
+                        weather_data = {
+                            "place": place.get("name", search_name), "county": county,
+                            "current": current,
+                            "condition": WEATHER_CODES.get(current.get("weather_code"), "Conditions unavailable"),
+                            "days": days,
+                            "source": "Open-Meteo"
+                        }
             except Exception:
                 app.logger.exception("Weather lookup failed for county=%s, area=%s", county, local_area)
                 error = "Weather information is temporarily unavailable. Please try again shortly."
