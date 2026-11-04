@@ -254,7 +254,7 @@ def fetch_wttr_weather(place):
     }
 
     days = []
-    for item in forecast_items:
+    for item in forecast_items[:3]:
         hourly = item.get("hourly") or []
         day_description = "Conditions unavailable"
         if hourly:
@@ -328,7 +328,7 @@ def weather():
                         "latitude": place["latitude"], "longitude": place["longitude"],
                         "current": "temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,wind_speed_10m",
                         "daily": "weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,precipitation_sum",
-                        "timezone": "Africa/Nairobi", "forecast_days": 5
+                        "timezone": "Africa/Nairobi", "forecast_days": 3
                     })
                     try:
                         forecast = fetch_weather_json(forecast_url)
@@ -347,7 +347,7 @@ def weather():
                             raise ValueError("The weather provider returned incomplete forecast data.")
 
                         days = []
-                        for n, date_value in enumerate(daily["time"]):
+                        for n, date_value in enumerate(daily["time"][:3]):
                             rain_chances = daily.get("precipitation_probability_max") or []
                             days.append({
                                 "date": date_value,
