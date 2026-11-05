@@ -396,7 +396,8 @@ def weather():
                             raise ValueError("The weather provider returned incomplete forecast data.")
 
                         days = []
-                        for n, date_value in enumerate(daily["time"][:3]):                            rain_chances = daily.get("precipitation_probability_max") or []
+                        rain_chances = daily.get("precipitation_probability_max") or []
+                        for n, date_value in enumerate(daily["time"][:3]):
                             days.append({
                                 "date": date_value,
                                 "condition": WEATHER_CODES.get(daily["weather_code"][n], "Conditions unavailable"),
