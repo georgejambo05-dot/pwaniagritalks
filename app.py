@@ -348,6 +348,7 @@ def fetch_wttr_weather(place):
 
 
 @app.route("/weather")
+@farmer_login_required
 def weather():
     county = request.args.get("county", "").strip()
     local_area = request.args.get("local_area", "").strip()
@@ -437,29 +438,36 @@ def weather():
                            local_area=local_area, weather=weather_data, error=error)
 
 @app.route("/maize-guide")
+@farmer_login_required
 def maize_guide():
     return render_template("maize_guide.html")
 
 @app.route("/chicken-guide")
+@farmer_login_required
 def chicken_guide():
     return render_template("chicken_guide.html")
 @app.route("/poultry-guide")
+@farmer_login_required
 def poultry_guide():
     return render_template("chicken_guide.html")
 
 @app.route("/rabbit-guide")
+@farmer_login_required
 def rabbit_guide():
     return render_template("rabbit_guide.html")
 
 @app.route("/dairy-cows-guide")
+@farmer_login_required
 def dairy_cows_guide():
     return render_template("dairy_cows_guide.html")
 
 @app.route("/goats-guide")
+@farmer_login_required
 def goats_guide():
     return render_template("goats_guide.html")
 
 @app.route("/sustainable-agriculture-guide")
+@farmer_login_required
 def sustainable_agriculture_guide():
     return render_template("sustainable_agriculture_guide.html")
 @app.route("/farmer-login", methods=["GET", "POST"])
