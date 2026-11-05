@@ -160,13 +160,28 @@ def get_farmer(farmer_id):
 
 
 def normalise_phone(phone):
-    """Return a consistent form for Kenyan phone numbers and preserve other numbers."""
-    digits = "".join(character for character in str(phone or "") if character.isdigit())
+    """Return a canonical +254 number for valid Kenyan 07/01 mobile numbers.
+
+    Accept local (07XXXXXXXX / 01XXXXXXXX), international
+    (+2547XXXXXXXX / +2541XXXXXXXX), and international without plus
+    (2547XXXXXXXX / 2541XXXXXXXX) formats. Return None for invalid input.
+    """
+    raw = str(phone or "").strip()
+    if not raw or any(
+        not (character.isdigit() or character in "+() -")
+        for character in raw
+    ):
+        return None
+
+    digits = "".join(character for character in raw if character.isdigit())
+
     if len(digits) == 10 and digits.startswith(("07", "01")):
         return "+254" + digits[1:]
-    if len(digits) == 12 and digits.startswith("254"):
+
+    if len(digits) == 12 and digits.startswith("254") and digits[3] in ("7", "1"):
         return "+" + digits
-    return digits
+
+    return None
 
 
 @app.route("/", methods=["GET", "POST"])
@@ -197,12 +212,12 @@ def home():
 
         if not full_name or not farming_type:
             return render_template(
-                "index.html", error="Please complete your name and farming type."
-            ), 400
+                "index.html", error="Please complete your name and farming type."            ), 400
         normal_phone = normalise_phone(phone)
-        if not 7 <= len("".join(c for c in phone if c.isdigit())) <= 15:
+        if normal_phone is None:
             return render_template(
-                "index.html", error="Enter a phone number containing 7 to 15 digits."
+                "index.html",
+                error="Enter a valid Kenyan mobile number starting with 07 or 01, or use the equivalent +254 format."
             ), 400
         if len(password) < 5:
             return render_template(
@@ -221,9 +236,17 @@ def home():
                 (normal_phone,),
             )
             existing_phones = connection.execute(
-                "SELECT phone FROM farmers"
+                "SELECT phone FROM farmers WHERE phone IS NOT NULL AND TRIM(phone) <> ''"
             ).fetchall()
-            if any(normalise_phone(row["phone"]) == normal_phone for row in existing_phones):
+            # Ignore legacy records whose phone value is not a valid Kenyan mobile
+            # number; compare valid old and new records in the same canonical format.
+            if any(
+                existing_normal_phone == normal_phone
+                for existing_normal_phone in (
+                    normalise_phone(row["phone"]) for row in existing_phones
+                )
+                if existing_normal_phone is not None
+            ):
                 return render_template(
                     "index.html",
                     error="An account with this phone number is already registered. Please log in instead."
@@ -398,7 +421,6 @@ def weather():
 
     return render_template("weather.html", counties=KENYAN_COUNTIES, county=county,
                            local_area=local_area, weather=weather_data, error=error)
-
 
 @app.route("/maize-guide")
 def maize_guide():
@@ -597,8 +619,7 @@ def farmer_questions():
                         (farmer_id, question_text, saved_photo_name),
                     )
             except Exception:
-                if saved_photo_name:
-                    (QUESTION_PHOTO_DIR / saved_photo_name).unlink(missing_ok=True)
+                if saved_photo_name:                    (QUESTION_PHOTO_DIR / saved_photo_name).unlink(missing_ok=True)
                 raise
             return redirect(url_for("farmer_questions", sent="yes"))
 
@@ -898,68 +919,3 @@ def edit_farmer(farmer_id):
     farmer = get_farmer(farmer_id)
     if farmer is None:
         abort(404)
-
-    if request.method == "POST":
-        full_name = request.form.get("full_name", "").strip()
-        phone = request.form.get("phone", "").strip()
-        location = request.form.get("location", "").strip()
-        farming_type = request.form.get("farming_type", "").strip()
-        new_password = request.form.get("new_password", "")
-
-        if not all([full_name, phone, location, farming_type]):
-            return render_template(
-                "edit_farmer.html", farmer=farmer,
-                error="Please fill in every field."
-            ), 400
-
-        phone_digits = "".join(character for character in phone if character.isdigit())
-        if not 7 <= len(phone_digits) <= 15:
-            farmer_values = dict(farmer)
-            farmer_values.update({
-                "full_name": full_name, "phone": phone,
-                "location": location, "farming_type": farming_type,
-            })
-            return render_template(
-                "edit_farmer.html", farmer=farmer_values,
-                error="Enter a phone number containing 7 to 15 digits."
-            ), 400
-
-        if new_password and len(new_password) < 5:
-            return render_template(
-                "edit_farmer.html", farmer=farmer,
-                error="A new farmer password must contain at least 5 characters."
-            ), 400
-
-        with database_connection() as connection:
-            if new_password:
-                connection.execute(
-                    """UPDATE farmers SET full_name = %s, phone = %s, location = %s,
-                       farming_type = %s, password_hash = %s WHERE id = %s""",
-                    (full_name, phone, location, farming_type,
-                     generate_password_hash(new_password), farmer_id),
-                )
-            else:
-                connection.execute(
-                    """UPDATE farmers SET full_name = %s, phone = %s, location = %s,
-                       farming_type = %s WHERE id = %s""",
-                    (full_name, phone, location, farming_type, farmer_id),
-                )
-
-        return redirect(url_for("farmers", updated="yes"))
-
-    return render_template("edit_farmer.html", farmer=farmer)
-
-
-@app.route("/farmers/<int:farmer_id>/delete", methods=["POST"])
-@login_required
-def delete_farmer(farmer_id):
-    with database_connection() as connection:
-        connection.execute("DELETE FROM farmers WHERE id = %s", (farmer_id,))
-    return redirect(url_for("farmers", deleted="yes"))
-
-
-create_database()
-
-
-if __name__ == "__main__":
-    app.run(debug=True)
