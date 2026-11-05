@@ -918,3 +918,110 @@ def edit_farmer(farmer_id):
     farmer = get_farmer(farmer_id)
     if farmer is None:
         abort(404)
+
+    if request.method == "POST":
+        full_name = request.form.get("full_name", "").strip()
+        phone = request.form.get("phone", "").strip()
+        location = request.form.get("location", "").strip()
+        farming_type = request.form.get("farming_type", "").strip()
+        new_password = request.form.get("new_password", "")
+        normal_phone = normalise_phone(phone)
+
+        if not all([full_name, phone, location, farming_type]):
+            return render_template(
+                "edit_farmer.html", farmer=farmer,
+                error="Please fill in every field."
+            ), 400
+
+        if normal_phone is None:
+            farmer_values = dict(farmer)
+            farmer_values.update({
+                "full_name": full_name, "phone": phone,
+                "location": location, "farming_type": farming_type,
+            })
+            return render_template(
+                "edit_farmer.html", farmer=farmer_values,
+                error="Enter a valid Kenyan mobile number starting with 07 or 01, or use the equivalent +254 format."
+            ), 400
+
+        if farming_type not in {"crops", "livestock", "mixed", "other"}:
+            return render_template(
+                "edit_farmer.html", farmer=farmer,
+                error="Choose a valid farming type."
+            ), 400
+
+        if new_password and len(new_password) < 5:
+            return render_template(
+                "edit_farmer.html", farmer=farmer,
+                error="A new farmer password must contain at least 5 characters."
+            ), 400
+
+        with database_connection() as connection:
+            other_phones = connection.execute(
+                "SELECT phone FROM farmers WHERE id <> %s",
+                (farmer_id,),
+            ).fetchall()
+            if any(
+                existing_phone == normal_phone
+                for existing_phone in (
+                    normalise_phone(row["phone"]) for row in other_phones
+                )
+                if existing_phone is not None
+            ):
+                farmer_values = dict(farmer)
+                farmer_values.update({
+                    "full_name": full_name, "phone": phone,
+                    "location": location, "farming_type": farming_type,
+                })
+                return render_template(
+                    "edit_farmer.html", farmer=farmer_values,
+                    error="That phone number is already registered to another farmer."
+                ), 409
+
+            if new_password:
+                connection.execute(
+                    """UPDATE farmers SET full_name = %s, phone = %s, location = %s,
+                       farming_type = %s, password_hash = %s WHERE id = %s""",
+                    (full_name, normal_phone, location, farming_type,
+                     generate_password_hash(new_password), farmer_id),
+                )
+            else:
+                connection.execute(
+                    """UPDATE farmers SET full_name = %s, phone = %s, location = %s,
+                       farming_type = %s WHERE id = %s""",
+                    (full_name, normal_phone, location, farming_type, farmer_id),
+                )
+
+        return redirect(url_for("farmers", updated="yes"))
+
+    return render_template("edit_farmer.html", farmer=farmer)
+
+
+@app.route("/farmers/<int:farmer_id>/delete", methods=["POST"])
+@login_required
+def delete_farmer(farmer_id):
+    with database_connection() as connection:
+        farmer_exists = connection.execute(
+            "SELECT 1 FROM farmers WHERE id = %s",
+            (farmer_id,),
+        ).fetchone()
+        if farmer_exists is None:
+            abort(404)
+
+        linked_questions = connection.execute(
+            "SELECT 1 FROM farmer_questions WHERE farmer_id = %s LIMIT 1",
+            (farmer_id,),
+        ).fetchone()
+        if linked_questions:
+            return redirect(url_for("farmers", delete_blocked="yes"))
+
+        connection.execute("DELETE FROM farmers WHERE id = %s", (farmer_id,))
+
+    return redirect(url_for("farmers", deleted="yes"))
+
+
+create_database()
+
+
+if __name__ == "__main__":
+    app.run(debug=True)
