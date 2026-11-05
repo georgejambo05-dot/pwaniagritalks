@@ -30,6 +30,7 @@
             <a class="button-link" href="{{ url_for('edit_own_profile') }}">Update my details</a>
             <a class="button-link" href="{{ url_for('farmer_change_password') }}">Change password</a>
             <a class="button-link" href="{{ url_for('farmer_questions') }}">Ask a question</a>
+            <a class="button-link" href="{{ url_for('farmer_notifications') }}">Notifications{% if unread_notifications %} ({{ unread_notifications }} unread){% endif %}</a>
         </section>
     </main>
     <footer><p>PWANIAGRITALKS | Growing the Coast Through Agriculture</p></footer>
