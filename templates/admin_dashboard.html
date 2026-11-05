@@ -14,6 +14,7 @@
     <nav>
         <a href="{{ url_for('farmers') }}">Registered Farmers</a>
         <a href="{{ url_for('admin_questions') }}">Farmer Questions</a>
+        <a href="{{ url_for('admin_messages') }}">Message Farmers</a>
         <span>Signed in as {{ admin_username }}</span>
         <form class="logout-form" method="post" action="{{ url_for('logout') }}">
             <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
@@ -34,6 +35,7 @@
             </div>
             <p><a class="button-link" href="{{ url_for('farmers') }}">Manage registered farmers</a></p>
             <p><a class="button-link" href="{{ url_for('admin_questions') }}">Open farmer questions</a></p>
+            <p><a class="button-link" href="{{ url_for('admin_messages') }}">Send a message to farmers</a></p>
         </section>
     </main>
     <footer><p>PWANIAGRITALKS | Growing the Coast Through Agriculture</p></footer>
