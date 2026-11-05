@@ -45,6 +45,27 @@
             </form>
         </section>
         <section>
+            <h2>Farmer replies</h2>
+            {% if request.args.get('replied') == 'yes' %}<p class="form-message" role="status">Your reply has been sent to the farmer.</p>{% endif %}
+            {% if farmer_replies %}
+                <div class="farmer-list">
+                    {% for reply in farmer_replies %}
+                        <article class="farmer-card">
+                            <p><strong>{{ reply['full_name'] }}</strong> replied to: {{ reply['original_message'] }}</p>
+                            <p>{{ reply['message'] }}</p>
+                            <p><small>{{ reply['created_at'] }}</small></p>
+                            <form method="post" action="{{ url_for('admin_reply_to_farmer_message', admin_message_id=reply['admin_message_id'], farmer_id=reply['farmer_id']) }}">
+                                <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                                <label for="admin_reply_{{ reply['id'] }}">Reply to farmer</label>
+                                <textarea id="admin_reply_{{ reply['id'] }}" name="reply" rows="3" maxlength="2000" required></textarea>
+                                <button type="submit">Send reply</button>
+                            </form>
+                        </article>
+                    {% endfor %}
+                </div>
+            {% else %}<p>No farmer replies yet.</p>{% endif %}
+        </section>
+        <section>
             <h2>Message history</h2>
             {% if message_history %}
                 <div class="farmer-list">
