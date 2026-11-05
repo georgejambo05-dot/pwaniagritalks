@@ -68,9 +68,9 @@
         </section>
         <section id="register">
             <h2>Farmer Registration</h2>
-            <p>Register to access your farmer account using your name and password.</p>
-            <p>Already registered? <a class="button-link" href="{{ url_for('farmer_login') }}">Farmer login</a></p>
-            {% if registered %}<p class="form-message" role="status">Registration complete. You can now log in with your name and password.</p>{% endif %}
+            <p>Create one account using your phone number. Use the same phone number whenever you log in.</p>
+            <p>Already have an account? <a class="button-link" href="{{ url_for('farmer_login') }}">Farmer login</a></p>
+            {% if registered %}<p class="form-message" role="status">Your account has been created successfully! Your phone number is now registered. Please log in using your phone number and password.</p>{% endif %}
             {% if error %}<p class="form-error" role="alert">{{ error }}</p>{% endif %}
             <form action="{{ url_for('home') }}#register" method="post">
                 <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
