@@ -430,18 +430,25 @@ def sustainable_agriculture_guide():
 def farmer_login():
     error = None
     if request.method == "POST":
-        phone = request.form.get("phone", "").strip()
-        normal_phone = normalise_phone(phone)
+        login_identifier = request.form.get("phone", "").strip()
         password = request.form.get("password", "")
         with database_connection() as connection:
-            all_farmers = connection.execute(
-                "SELECT id, phone, password_hash FROM farmers WHERE password_hash IS NOT NULL"
-            ).fetchall()
-
-        matching_farmers = [
-            farmer for farmer in all_farmers
-            if normalise_phone(farmer["phone"]) == normal_phone
-        ]
+            if any(character.isdigit() for character in login_identifier):
+                normal_phone = normalise_phone(login_identifier)
+                all_farmers = connection.execute(
+                    "SELECT id, phone, password_hash FROM farmers WHERE password_hash IS NOT NULL"
+                ).fetchall()
+                matching_farmers = [
+                    farmer for farmer in all_farmers
+                    if normalise_phone(farmer["phone"]) == normal_phone
+                ]
+            else:
+                # Keep name-based login working for farmers who used the older form.
+                matching_farmers = connection.execute(
+                    """SELECT id, password_hash FROM farmers
+                       WHERE full_name ILIKE %s AND password_hash IS NOT NULL""",
+                    (login_identifier,),
+                ).fetchall()
         for matching_farmer in matching_farmers:
             if check_password_hash(matching_farmer["password_hash"], password):
                 session.clear()
