@@ -699,3 +699,34 @@ footer a { color: #f6d98b; }
 .registration-success p {
     margin: 8px 0;
 }
+
+
+/* Search icon inside the farmer registration county search field */
+.county-search-field {
+    position: relative;
+    width: 100%;
+    margin-top: 6px;
+}
+.county-search-field input {
+    margin-top: 0;
+    padding-left: 42px;
+}
+.county-search-icon {
+    position: absolute;
+    top: 50%;
+    left: 13px;
+    width: 19px;
+    height: 19px;
+    transform: translateY(-50%);
+    color: #176b45;
+    pointer-events: none;
+}
+.county-search-icon svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+}
