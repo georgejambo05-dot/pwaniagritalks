@@ -678,3 +678,24 @@ footer a { color: #f6d98b; }
     .farmer-card { min-height: 0; }
     .home-nav { position: static; }
 }
+
+
+.registration-success {
+    margin: 16px 0;
+    padding: 18px;
+    border: 2px solid #2e7d32;
+    border-left-width: 7px;
+    border-radius: 8px;
+    background: #e8f5e9;
+    color: #174d1b;
+}
+
+.registration-success strong {
+    display: block;
+    font-size: 1.15rem;
+    margin-bottom: 8px;
+}
+
+.registration-success p {
+    margin: 8px 0;
+}
