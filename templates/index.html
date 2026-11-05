@@ -70,7 +70,12 @@
             <h2>Farmer Registration</h2>
             <p>Create one account using your phone number. Use the same phone number whenever you log in.</p>
             <p>Already have an account? <a class="button-link" href="{{ url_for('farmer_login') }}">Farmer login</a></p>
-            {% if registered %}<p class="form-message" role="status">Your account has been created successfully! Your phone number is now registered. Please log in using your phone number and password.</p>{% endif %}
+            {% if registered %}<div class="registration-success" role="status" aria-live="polite">
+                <strong>✓ Registration successful!</strong>
+                <p>Your PWANIAGRITALKS account has been created and your phone number is registered.</p>
+                <p>You can now sign in using your phone number and password.</p>
+                <a class="button-link" href="{{ url_for('farmer_login') }}">Log in to your farmer account</a>
+            </div>{% endif %}
             {% if error %}<p class="form-error" role="alert">{{ error }}</p>{% endif %}
             <form action="{{ url_for('home') }}#register" method="post">
                 <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
