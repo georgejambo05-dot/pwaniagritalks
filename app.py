@@ -127,6 +127,15 @@ def create_database():
             )
         """)
         connection.execute("""
+            CREATE TABLE IF NOT EXISTS admin_messages (
+                id BIGSERIAL PRIMARY KEY,
+                sender_username TEXT NOT NULL,
+                message TEXT NOT NULL,
+                recipient_count INTEGER NOT NULL DEFAULT 0,
+                created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+        connection.execute("""
             CREATE INDEX IF NOT EXISTS idx_farmer_notifications_farmer_unread
             ON farmer_notifications (farmer_id, read_at, created_at DESC)
         """)
@@ -919,6 +928,70 @@ def admin_dashboard():
         unanswered_questions=unanswered_questions,
         counts_by_type=counts_by_type,
     )
+
+@app.route("/admin-messages", methods=["GET", "POST"])
+@login_required
+def admin_messages():
+    error = None
+    sent = request.args.get("sent") == "yes"
+
+    if request.method == "POST":
+        message = request.form.get("message", "").strip()
+        audience = request.form.get("audience", "all")
+        farmer_id = request.form.get("farmer_id", type=int)
+
+        if not message:
+            error = "Please write a message before sending."
+        elif len(message) > 2000:
+            error = "Please keep the message under 2,000 characters."
+        elif audience not in {"all", "one"}:
+            error = "Please choose a valid recipient option."
+        elif audience == "one" and farmer_id is None:
+            error = "Please select a farmer."
+        else:
+            with database_connection() as connection:
+                if audience == "all":
+                    recipients = connection.execute(
+                        """INSERT INTO farmer_notifications (farmer_id, message)
+                           SELECT id, %s FROM farmers
+                           RETURNING farmer_id""",
+                        (message,),
+                    ).fetchall()
+                else:
+                    recipients = connection.execute(
+                        """INSERT INTO farmer_notifications (farmer_id, message)
+                           SELECT id, %s FROM farmers WHERE id = %s
+                           RETURNING farmer_id""",
+                        (message, farmer_id),
+                    ).fetchall()
+
+                recipient_count = len(recipients)
+                if recipient_count == 0:
+                    error = "No matching farmer account was found. No message was sent."
+                else:
+                    connection.execute(
+                        """INSERT INTO admin_messages
+                           (sender_username, message, recipient_count)
+                           VALUES (%s, %s, %s)""",
+                        (session["admin_username"], message, recipient_count),
+                    )
+            if error is None:
+                return redirect(url_for("admin_messages", sent="yes"))
+
+    with database_connection() as connection:
+        farmer_list = connection.execute(
+            "SELECT id, full_name, location FROM farmers ORDER BY full_name"
+        ).fetchall()
+        message_history = connection.execute(
+            """SELECT id, sender_username, message, recipient_count, created_at
+               FROM admin_messages ORDER BY created_at DESC, id DESC LIMIT 50"""
+        ).fetchall()
+
+    return render_template(
+        "admin_messages.html", farmers=farmer_list,
+        message_history=message_history, error=error, sent=sent
+    )
+
 
 @app.route("/farmers")
 @login_required
