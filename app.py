@@ -159,6 +159,16 @@ def get_farmer(farmer_id):
         ).fetchone()
 
 
+def normalise_phone(phone):
+    """Return a consistent form for Kenyan phone numbers and preserve other numbers."""
+    digits = "".join(character for character in str(phone or "") if character.isdigit())
+    if len(digits) == 10 and digits.startswith(("07", "01")):
+        return "+254" + digits[1:]
+    if len(digits) == 12 and digits.startswith("254"):
+        return "+" + digits
+    return digits
+
+
 @app.route("/", methods=["GET", "POST"])
 def home():
     if request.method == "POST":
@@ -185,8 +195,12 @@ def home():
         password = request.form.get("password", "")
         confirmation = request.form.get("confirmation", "")
 
-        phone_digits = "".join(character for character in phone if character.isdigit())
-        if not 7 <= len(phone_digits) <= 15:
+        if not full_name or not farming_type:
+            return render_template(
+                "index.html", error="Please complete your name and farming type."
+            ), 400
+        normal_phone = normalise_phone(phone)
+        if not 7 <= len("".join(c for c in phone if c.isdigit())) <= 15:
             return render_template(
                 "index.html", error="Enter a phone number containing 7 to 15 digits."
             ), 400
@@ -201,13 +215,26 @@ def home():
 
         password_hash = generate_password_hash(password)
         with database_connection() as connection:
+            # Serialise registrations for the same phone number to prevent duplicates.
+            connection.execute(
+                "SELECT pg_advisory_xact_lock(hashtextextended(%s, 0))",
+                (normal_phone,),
+            )
+            existing_phones = connection.execute(
+                "SELECT phone FROM farmers"
+            ).fetchall()
+            if any(normalise_phone(row["phone"]) == normal_phone for row in existing_phones):
+                return render_template(
+                    "index.html",
+                    error="An account with this phone number is already registered. Please log in instead."
+                ), 409
             connection.execute(
                 """INSERT INTO farmers
                    (full_name, phone, location, farming_type, password_hash)
                    VALUES (%s, %s, %s, %s, %s)""",
-                (full_name, phone, location, farming_type, password_hash),
+                (full_name, normal_phone, location, farming_type, password_hash),
             )
-        
+
 
         return redirect(url_for("home", registered="yes") + "#register")
 
@@ -403,23 +430,24 @@ def sustainable_agriculture_guide():
 def farmer_login():
     error = None
     if request.method == "POST":
-        full_name = request.form.get("full_name", "").strip()
+        phone = request.form.get("phone", "").strip()
+        normal_phone = normalise_phone(phone)
         password = request.form.get("password", "")
         with database_connection() as connection:
-            matching_farmers = connection.execute(
-                """SELECT id, password_hash FROM farmers
-                   WHERE full_name ILIKE %s AND password_hash IS NOT NULL""",
-                (full_name,),
+            all_farmers = connection.execute(
+                "SELECT id, phone, password_hash FROM farmers WHERE password_hash IS NOT NULL"
             ).fetchall()
 
+        matching_farmers = [
+            farmer for farmer in all_farmers
+            if normalise_phone(farmer["phone"]) == normal_phone
+        ]
         for matching_farmer in matching_farmers:
-            farmer_id = matching_farmer["id"]
-            password_hash = matching_farmer["password_hash"]
-            if check_password_hash(password_hash, password):
+            if check_password_hash(matching_farmer["password_hash"], password):
                 session.clear()
-                session["farmer_id"] = farmer_id
+                session["farmer_id"] = matching_farmer["id"]
                 return redirect(url_for("farmer_portal"))
-        error = "The name or password is incorrect."
+        error = "The phone number or password is incorrect. If you have not registered, create an account first."
 
     return render_template("farmer_login.html", error=error)
 
