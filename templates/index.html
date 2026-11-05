@@ -85,6 +85,9 @@
                 <input type="tel" id="phone" name="phone" placeholder="e.g. 0712 345 678" minlength="7" maxlength="20" pattern="[0-9+() -]{7,20}" title="Use 7 to 20 digits, spaces, plus signs, or parentheses" required>
                 <label for="county">County</label>
                 <p><small>Counties are arranged from highest to lowest agricultural, forestry and fishing value added (2024).</small></p>
+                <label for="county-search">Search for your county</label>
+                <input type="search" id="county-search" placeholder="Type a county name..." autocomplete="off" aria-controls="county" aria-describedby="county-search-status">
+                <small id="county-search-status" aria-live="polite">All 47 counties are available. Type to narrow the list.</small>
                 <select id="county" name="county" required>
                     <option value="" disabled selected>Select your county</option>
                     <option>Meru</option>
@@ -156,6 +159,35 @@
     </main>
     <footer><p>PWANIAGRITALKS | Growing the Coast Through Agriculture</p><p><a href="{{ url_for('login') }}">Admin Login</a></p></footer>
     <script src="{{ url_for('static', filename='guide-search.js') }}?v=1" defer></script>
+    <script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const search = document.getElementById("county-search");
+        const countySelect = document.getElementById("county");
+        const status = document.getElementById("county-search-status");
+        if (!search || !countySelect || !status) return;
+
+        const countyOptions = Array.from(countySelect.options).filter(option => option.value);
+        search.addEventListener("input", function () {
+            const query = search.value.trim().toLocaleLowerCase();
+            let visibleCount = 0;
+
+            countyOptions.forEach(option => {
+                const matches = option.textContent.toLocaleLowerCase().includes(query);
+                option.hidden = !matches;
+                if (matches) visibleCount++;
+            });
+
+            if (countySelect.selectedOptions.length &&
+                countySelect.selectedOptions[0].hidden) {
+                countySelect.value = "";
+            }
+
+            status.textContent = query
+                ? (visibleCount ? visibleCount + " matching counties. Select your county below." : "No county matches that search. Try another spelling.")
+                : "All 47 counties are available. Type to narrow the list.";
+        });
+    });
+    </script>
 </body>
 </html>
 
