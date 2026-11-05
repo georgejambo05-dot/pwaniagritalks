@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PWANIAGRITALKS</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=13">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=14">
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='pwaniagritalks-brand-logo.png') }}?v=3">
 </head>
 <body>
@@ -86,7 +86,15 @@
                 <label for="county">County</label>
                 <p><small>Counties are arranged from highest to lowest agricultural, forestry and fishing value added (2024).</small></p>
                 <label for="county-search">Search for your county</label>
-                <input type="search" id="county-search" placeholder="Type a county name..." autocomplete="off" aria-controls="county" aria-describedby="county-search-status">
+                <div class="county-search-field">
+                    <span class="county-search-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" focusable="false">
+                            <circle cx="10.8" cy="10.8" r="6.8"></circle>
+                            <path d="m16 16 5 5"></path>
+                        </svg>
+                    </span>
+                    <input type="search" id="county-search" placeholder="Type a county name..." autocomplete="off" aria-controls="county" aria-describedby="county-search-status">
+                </div>
                 <small id="county-search-status" aria-live="polite">All 47 counties are available. Type to narrow the list.</small>
                 <select id="county" name="county" required>
                     <option value="" disabled selected>Select your county</option>
