@@ -984,12 +984,13 @@ def admin_messages():
                            VALUES (%s, %s, %s) RETURNING id""",
                         (session["admin_username"], message, recipient_count),
                     ).fetchone()
-                    connection.executemany(
-                        """INSERT INTO farmer_notifications
-                           (farmer_id, message, admin_message_id)
-                           VALUES (%s, %s, %s)""",
-                        [(row["id"], message, admin_message["id"]) for row in recipients],
-                    )
+                    for recipient in recipients:
+                        connection.execute(
+                            """INSERT INTO farmer_notifications
+                               (farmer_id, message, admin_message_id)
+                               VALUES (%s, %s, %s)""",
+                            (recipient["id"], message, admin_message["id"]),
+                        )
             if error is None:
                 return redirect(url_for("admin_messages", sent="yes"))
 
