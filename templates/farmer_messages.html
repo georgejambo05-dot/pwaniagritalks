@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Messages | PWANIAGRITALKS</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=16">
+</head>
+<body>
+    <header><h1 class="site-logo-heading"><a href="{{ url_for('home') }}"><img class="site-logo" src="{{ url_for('static', filename='pwaniagritalks-brand-logo.jpg') }}?v=3" alt="PWANIAGRITALKS"></a></h1><p>Messages from PwaniAgritalks</p></header>
+    <nav><a href="{{ url_for('farmer_portal') }}">My account</a><a href="{{ url_for('farmer_notifications') }}">Notifications</a></nav>
+    <main><section>
+        <h2>My Messages</h2>
+        <p>You can reply directly to messages sent by the PwaniAgritalks administrator.</p>
+        {% if replied %}<p class="form-message" role="status">Your reply has been sent.</p>{% endif %}
+        {% if error %}<p class="form-error" role="alert">{{ error }}</p>{% endif %}
+        {% if messages %}
+            <div class="farmer-list">
+            {% for item in messages %}
+                <article class="farmer-card">
+                    <p><strong>Admin · {{ item['created_at'] }}</strong></p>
+                    <p>{{ item['message'] }}</p>
+                    {% for reply in reply_map.get(item['id'], []) %}
+                        <p><strong>{{ 'You' if reply['sender_type'] == 'farmer' else 'Admin' }} · {{ reply['created_at'] }}</strong></p>
+                        <p>{{ reply['message'] }}</p>
+                    {% endfor %}
+                    <form method="post" action="{{ url_for('farmer_messages') }}">
+                        <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                        <input type="hidden" name="admin_message_id" value="{{ item['id'] }}">
+                        <label for="reply_{{ item['id'] }}">Your reply</label>
+                        <textarea id="reply_{{ item['id'] }}" name="reply" rows="3" maxlength="2000" required></textarea>
+                        <button type="submit">Send reply</button>
+                    </form>
+                </article>
+            {% endfor %}
+            </div>
+        {% else %}
+            <p>You have no direct admin messages yet.</p>
+        {% endif %}
+    </section></main>
+    <footer><p>PWANIAGRITALKS | Growing the Coast Through Agriculture</p></footer>
+</body>
+</html>
