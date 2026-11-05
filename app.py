@@ -197,8 +197,7 @@ def home():
             "Tharaka-Nithi", "Embu", "Kitui", "Machakos", "Makueni", "Nyandarua",
             "Nyeri", "Kirinyaga", "Murang'a", "Kiambu", "Turkana", "West Pokot",
             "Samburu", "Trans Nzoia", "Uasin Gishu", "Elgeyo-Marakwet", "Nandi",
-            "Baringo", "Laikipia", "Nakuru", "Narok", "Kajiado", "Kericho",
-            "Bomet", "Kakamega", "Vihiga", "Bungoma", "Busia", "Siaya",
+            "Baringo", "Laikipia", "Nakuru", "Narok", "Kajiado", "Kericho",            "Bomet", "Kakamega", "Vihiga", "Bungoma", "Busia", "Siaya",
             "Kisumu", "Homa Bay", "Migori", "Kisii", "Nyamira", "Nairobi"
         }
         location = county + " County" + (" - " + local_area if local_area else "")
@@ -397,8 +396,7 @@ def weather():
                             raise ValueError("The weather provider returned incomplete forecast data.")
 
                         days = []
-                        for n, date_value in enumerate(daily["time"][:3]):
-                            rain_chances = daily.get("precipitation_probability_max") or []
+                        for n, date_value in enumerate(daily["time"][:3]):                            rain_chances = daily.get("precipitation_probability_max") or []
                             days.append({
                                 "date": date_value,
                                 "condition": WEATHER_CODES.get(daily["weather_code"][n], "Conditions unavailable"),
@@ -457,13 +455,16 @@ def farmer_login():
         with database_connection() as connection:
             if any(character.isdigit() for character in login_identifier):
                 normal_phone = normalise_phone(login_identifier)
-                all_farmers = connection.execute(
-                    "SELECT id, phone, password_hash FROM farmers WHERE password_hash IS NOT NULL"
-                ).fetchall()
-                matching_farmers = [
-                    farmer for farmer in all_farmers
-                    if normalise_phone(farmer["phone"]) == normal_phone
-                ]
+                if normal_phone is None:
+                    matching_farmers = []
+                else:
+                    all_farmers = connection.execute(
+                        "SELECT id, phone, password_hash FROM farmers WHERE password_hash IS NOT NULL"
+                    ).fetchall()
+                    matching_farmers = [
+                        farmer for farmer in all_farmers
+                        if normalise_phone(farmer["phone"]) == normal_phone
+                    ]
             else:
                 # Keep name-based login working for farmers who used the older form.
                 matching_farmers = connection.execute(
@@ -597,8 +598,7 @@ def farmer_questions():
                 ".webp": lambda data: len(data) >= 12 and data[:4] == b"RIFF" and data[8:12] == b"WEBP",
             }
             signature_check = allowed_signatures.get(photo_extension)
-            if signature_check is None:
-                error = "Choose a JPG, PNG, or WEBP photo."
+            if signature_check is None:                error = "Choose a JPG, PNG, or WEBP photo."
             else:
                 photo_bytes = photo.stream.read(MAX_QUESTION_PHOTO_BYTES + 1)
                 if len(photo_bytes) > MAX_QUESTION_PHOTO_BYTES:
@@ -797,8 +797,7 @@ def admin_recover():
                     SET username = %s, password_hash = %s
                     WHERE id = (
                         SELECT id FROM admin_users ORDER BY id LIMIT 1
-                    )
-                    RETURNING id
+                    )                    RETURNING id
                     """,
                     (username, generate_password_hash(password)),
                 ).fetchone()
