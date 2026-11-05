@@ -115,6 +115,21 @@ def create_database():
                 status TEXT NOT NULL DEFAULT 'Waiting for a response'
             )
         """)
+        # In-app alerts are stored separately so existing farmer and question records remain untouched.
+        connection.execute("""
+            CREATE TABLE IF NOT EXISTS farmer_notifications (
+                id BIGSERIAL PRIMARY KEY,
+                farmer_id BIGINT NOT NULL,
+                question_id BIGINT,
+                message TEXT NOT NULL,
+                created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                read_at TIMESTAMP
+            )
+        """)
+        connection.execute("""
+            CREATE INDEX IF NOT EXISTS idx_farmer_notifications_farmer_unread
+            ON farmer_notifications (farmer_id, read_at, created_at DESC)
+        """)
         question_columns = {
             row["column_name"] for row in connection.execute(
                 "SELECT column_name FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'farmer_questions'"
@@ -490,7 +505,49 @@ def farmer_portal():
     if farmer is None:
         session.clear()
         return redirect(url_for("farmer_login"))
-    return render_template("farmer_portal.html", farmer=farmer)
+    with database_connection() as connection:
+        unread_notifications = connection.execute(
+            "SELECT COUNT(*) AS count FROM farmer_notifications WHERE farmer_id = %s AND read_at IS NULL",
+            (session["farmer_id"],),
+        ).fetchone()["count"]
+    return render_template(
+        "farmer_portal.html", farmer=farmer,
+        unread_notifications=unread_notifications
+    )
+
+
+@app.route("/farmer-notifications", methods=["GET", "POST"])
+@farmer_login_required
+def farmer_notifications():
+    farmer_id = session["farmer_id"]
+    if request.method == "POST":
+        notification_id = request.form.get("notification_id", type=int)
+        if notification_id is None:
+            abort(400)
+        with database_connection() as connection:
+            connection.execute(
+                """UPDATE farmer_notifications SET read_at = CURRENT_TIMESTAMP
+                   WHERE id = %s AND farmer_id = %s AND read_at IS NULL""",
+                (notification_id, farmer_id),
+            )
+        return redirect(url_for("farmer_notifications"))
+
+    with database_connection() as connection:
+        notifications = connection.execute(
+            """SELECT id, question_id, message, created_at, read_at
+               FROM farmer_notifications WHERE farmer_id = %s
+               ORDER BY created_at DESC, id DESC LIMIT 100""",
+            (farmer_id,),
+        ).fetchall()
+        unread_notifications = connection.execute(
+            "SELECT COUNT(*) AS count FROM farmer_notifications WHERE farmer_id = %s AND read_at IS NULL",
+            (farmer_id,),
+        ).fetchone()["count"]
+    return render_template(
+        "farmer_notifications.html",
+        notifications=notifications,
+        unread_notifications=unread_notifications,
+    )
 
 
 @app.route("/farmer-change-password", methods=["GET", "POST"])
@@ -687,16 +744,25 @@ def reply_to_question(question_id):
         return redirect(url_for("admin_questions", error="long"))
 
     with database_connection() as connection:
-        question_exists = connection.execute(
-            "SELECT 1 FROM farmer_questions WHERE id = %s", (question_id,)
+        question = connection.execute(
+            "SELECT farmer_id FROM farmer_questions WHERE id = %s", (question_id,)
         ).fetchone()
-        if question_exists is None:
+        if question is None:
             abort(404)
         connection.execute(
             """UPDATE farmer_questions
                SET answer = %s, answered_at = CURRENT_TIMESTAMP, status = 'Answered'
                WHERE id = %s""",
             (answer, question_id),
+        )
+        connection.execute(
+            """INSERT INTO farmer_notifications (farmer_id, question_id, message)
+               VALUES (%s, %s, %s)""",
+            (
+                question["farmer_id"],
+                question_id,
+                "The PWANIAGRITALKS admin has answered your farming question.",
+            ),
         )
     return redirect(url_for("admin_questions", replied="yes"))
 
