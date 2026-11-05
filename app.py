@@ -135,6 +135,21 @@ def create_database():
                 created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
             )
         """)
+        connection.execute("ALTER TABLE farmer_notifications ADD COLUMN IF NOT EXISTS admin_message_id BIGINT")
+        connection.execute("""
+            CREATE TABLE IF NOT EXISTS farmer_message_replies (
+                id BIGSERIAL PRIMARY KEY,
+                admin_message_id BIGINT NOT NULL,
+                farmer_id BIGINT NOT NULL,
+                sender_type TEXT NOT NULL CHECK (sender_type IN ('farmer', 'admin')),
+                message TEXT NOT NULL,
+                created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+        connection.execute("""
+            CREATE INDEX IF NOT EXISTS idx_farmer_message_replies_thread
+            ON farmer_message_replies (admin_message_id, farmer_id, created_at, id)
+        """)
         connection.execute("""
             CREATE INDEX IF NOT EXISTS idx_farmer_notifications_farmer_unread
             ON farmer_notifications (farmer_id, read_at, created_at DESC)
@@ -952,28 +967,28 @@ def admin_messages():
             with database_connection() as connection:
                 if audience == "all":
                     recipients = connection.execute(
-                        """INSERT INTO farmer_notifications (farmer_id, message)
-                           SELECT id, %s FROM farmers
-                           RETURNING farmer_id""",
-                        (message,),
+                        "SELECT id FROM farmers ORDER BY id"
                     ).fetchall()
                 else:
                     recipients = connection.execute(
-                        """INSERT INTO farmer_notifications (farmer_id, message)
-                           SELECT id, %s FROM farmers WHERE id = %s
-                           RETURNING farmer_id""",
-                        (message, farmer_id),
+                        "SELECT id FROM farmers WHERE id = %s", (farmer_id,)
                     ).fetchall()
 
                 recipient_count = len(recipients)
                 if recipient_count == 0:
                     error = "No matching farmer account was found. No message was sent."
                 else:
-                    connection.execute(
+                    admin_message = connection.execute(
                         """INSERT INTO admin_messages
                            (sender_username, message, recipient_count)
-                           VALUES (%s, %s, %s)""",
+                           VALUES (%s, %s, %s) RETURNING id""",
                         (session["admin_username"], message, recipient_count),
+                    ).fetchone()
+                    connection.executemany(
+                        """INSERT INTO farmer_notifications
+                           (farmer_id, message, admin_message_id)
+                           VALUES (%s, %s, %s)""",
+                        [(row["id"], message, admin_message["id"]) for row in recipients],
                     )
             if error is None:
                 return redirect(url_for("admin_messages", sent="yes"))
@@ -986,11 +1001,104 @@ def admin_messages():
             """SELECT id, sender_username, message, recipient_count, created_at
                FROM admin_messages ORDER BY created_at DESC, id DESC LIMIT 50"""
         ).fetchall()
+        farmer_replies = connection.execute(
+            """SELECT r.id, r.admin_message_id, r.farmer_id, r.message, r.created_at,
+                      f.full_name, am.message AS original_message
+               FROM farmer_message_replies r
+               JOIN farmers f ON f.id = r.farmer_id
+               JOIN admin_messages am ON am.id = r.admin_message_id
+               WHERE r.sender_type = 'farmer'
+               ORDER BY r.created_at DESC, r.id DESC LIMIT 100"""
+        ).fetchall()
 
     return render_template(
         "admin_messages.html", farmers=farmer_list,
-        message_history=message_history, error=error, sent=sent
+        message_history=message_history, farmer_replies=farmer_replies, error=error, sent=sent
     )
+
+
+@app.route("/farmer-messages", methods=["GET", "POST"])
+@farmer_login_required
+def farmer_messages():
+    farmer_id = session["farmer_id"]
+    error = None
+    if request.method == "POST":
+        admin_message_id = request.form.get("admin_message_id", type=int)
+        reply = request.form.get("reply", "").strip()
+        if not admin_message_id:
+            abort(400)
+        if not reply:
+            error = "Please write a reply before sending."
+        elif len(reply) > 2000:
+            error = "Please keep your reply under 2,000 characters."
+        else:
+            with database_connection() as connection:
+                received = connection.execute(
+                    """SELECT 1 FROM farmer_notifications
+                       WHERE farmer_id = %s AND admin_message_id = %s LIMIT 1""",
+                    (farmer_id, admin_message_id),
+                ).fetchone()
+                if not received:
+                    abort(404)
+                connection.execute(
+                    """INSERT INTO farmer_message_replies
+                       (admin_message_id, farmer_id, sender_type, message)
+                       VALUES (%s, %s, 'farmer', %s)""",
+                    (admin_message_id, farmer_id, reply),
+                )
+            return redirect(url_for("farmer_messages", replied="yes"))
+
+    with database_connection() as connection:
+        messages = connection.execute(
+            """SELECT am.id, am.message, am.sender_username, am.created_at
+               FROM admin_messages am
+               JOIN farmer_notifications fn ON fn.admin_message_id = am.id
+               WHERE fn.farmer_id = %s
+               ORDER BY am.created_at DESC, am.id DESC""",
+            (farmer_id,),
+        ).fetchall()
+        replies = connection.execute(
+            """SELECT admin_message_id, sender_type, message, created_at
+               FROM farmer_message_replies
+               WHERE farmer_id = %s
+               ORDER BY created_at, id""",
+            (farmer_id,),
+        ).fetchall()
+    reply_map = {}
+    for item in replies:
+        reply_map.setdefault(item["admin_message_id"], []).append(item)
+    return render_template(
+        "farmer_messages.html", messages=messages, reply_map=reply_map,
+        error=error, replied=request.args.get("replied") == "yes"
+    )
+
+
+@app.route("/admin-messages/<int:admin_message_id>/reply/<int:farmer_id>", methods=["POST"])
+@login_required
+def admin_reply_to_farmer_message(admin_message_id, farmer_id):
+    reply = request.form.get("reply", "").strip()
+    if not reply or len(reply) > 2000:
+        abort(400)
+    with database_connection() as connection:
+        received = connection.execute(
+            """SELECT 1 FROM farmer_notifications
+               WHERE farmer_id = %s AND admin_message_id = %s LIMIT 1""",
+            (farmer_id, admin_message_id),
+        ).fetchone()
+        if not received:
+            abort(404)
+        connection.execute(
+            """INSERT INTO farmer_message_replies
+               (admin_message_id, farmer_id, sender_type, message)
+               VALUES (%s, %s, 'admin', %s)""",
+            (admin_message_id, farmer_id, reply),
+        )
+        connection.execute(
+            """INSERT INTO farmer_notifications (farmer_id, message)
+               VALUES (%s, %s)""",
+            (farmer_id, "The PwaniAgritalks admin has replied to your message. Open Messages in your farmer account to read it."),
+        )
+    return redirect(url_for("admin_messages", replied="yes"))
 
 
 @app.route("/farmers")
