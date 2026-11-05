@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Message Farmers | PWANIAGRITALKS</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=15">
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='pwaniagritalks-brand-logo.png') }}?v=3">
+</head>
+<body>
+    <header><h1 class="site-logo-heading"><a href="{{ url_for('home') }}"><img class="site-logo" src="{{ url_for('static', filename='pwaniagritalks-brand-logo.jpg') }}?v=3" alt="PWANIAGRITALKS"></a></h1><p>Administrator messaging</p></header>
+    <nav>
+        <a href="{{ url_for('admin_dashboard') }}">Dashboard</a>
+        <a href="{{ url_for('farmers') }}">Registered Farmers</a>
+        <a href="{{ url_for('admin_questions') }}">Farmer Questions</a>
+        <form class="logout-form" method="post" action="{{ url_for('logout') }}">
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+            <button type="submit">Sign out</button>
+        </form>
+    </nav>
+    <main>
+        <section>
+            <h2>Send a message to farmers</h2>
+            <p>Messages are delivered to the selected farmers' PwaniAgritalks notification inbox. They will see them after signing in.</p>
+            {% if sent %}<p class="form-message" role="status">Your message was sent successfully.</p>{% endif %}
+            {% if error %}<p class="form-error" role="alert">{{ error }}</p>{% endif %}
+            <form method="post" action="{{ url_for('admin_messages') }}">
+                <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                <label for="audience">Who should receive this message?</label>
+                <select id="audience" name="audience" required>
+                    <option value="all">All registered farmers</option>
+                    <option value="one">One selected farmer</option>
+                </select>
+                <label for="farmer_id">Select a farmer (only needed for one farmer)</label>
+                <select id="farmer_id" name="farmer_id">
+                    <option value="">Choose a farmer</option>
+                    {% for farmer in farmers %}
+                        <option value="{{ farmer['id'] }}">{{ farmer['full_name'] }} — {{ farmer['location'] }}</option>
+                    {% endfor %}
+                </select>
+                <label for="message">Your message</label>
+                <textarea id="message" name="message" rows="6" maxlength="2000" required placeholder="Write farming advice, an announcement, or an important update..."></textarea>
+                <p><small>Maximum 2,000 characters. Check the recipient selection and message before sending.</small></p>
+                <button type="submit">Send message</button>
+            </form>
+        </section>
+        <section>
+            <h2>Message history</h2>
+            {% if message_history %}
+                <div class="farmer-list">
+                    {% for item in message_history %}
+                        <article class="farmer-card">
+                            <p>{{ item['message'] }}</p>
+                            <p><small>Sent by {{ item['sender_username'] }} to {{ item['recipient_count'] }} farmer(s) · {{ item['created_at'] }}</small></p>
+                        </article>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p>No admin messages have been sent yet.</p>
+            {% endif %}
+        </section>
+    </main>
+    <footer><p>PWANIAGRITALKS | Growing the Coast Through Agriculture</p></footer>
+</body>
+</html>
